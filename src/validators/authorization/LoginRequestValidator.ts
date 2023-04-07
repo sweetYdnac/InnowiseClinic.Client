@@ -4,10 +4,11 @@ import * as Yup from 'yup';
 import AuthorizationService from '../../services/AuthorizationService';
 import { AxiosError } from 'axios';
 import { useState } from 'react';
+import { modalEvents } from '../../events/events';
+import { EventType } from '../../events/eventTypes';
+import { LoginMessage } from '../../components/Header';
 
-export default function GetLoginRequestValidator(
-    setLoginOpen: React.Dispatch<React.SetStateAction<boolean>>
-) {
+export default function GetLoginRequestValidator() {
     const [errorMessage, setErrorMessage] = useState('');
 
     const formik = useFormik<ILoginRequest>({
@@ -30,7 +31,9 @@ export default function GetLoginRequestValidator(
         onSubmit: async (values) => {
             try {
                 await AuthorizationService.signIn(values);
-                setLoginOpen(false);
+                modalEvents.emit(
+                    `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`
+                );
             } catch (error) {
                 if (error instanceof AxiosError) {
                     switch (error.response?.status) {

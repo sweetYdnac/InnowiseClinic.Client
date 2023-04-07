@@ -4,26 +4,29 @@ import Modal from '@mui/material/Modal';
 import CloseIcon from '@mui/icons-material/Close';
 import IconButton from '@mui/material/IconButton';
 import '../customizedModal/CustomizedModal.css';
+import { modalEvents } from '../../events/events';
+import { EventType } from '../../events/eventTypes';
 
 interface CustomizedModalProps {
     isOpen: boolean;
-    setModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    name: string;
     children: React.ReactNode;
 }
 
 const CustomizedModal: FunctionComponent<CustomizedModalProps> = ({
     isOpen,
-    setModalOpen,
+    name,
     children,
 }: CustomizedModalProps) => {
+    const closeModal = () => {
+        modalEvents.emit(`${EventType.SWITCH_MODAL} ${name}`);
+    };
+
     return (
         <>
             <Modal open={isOpen}>
                 <Box className='modal-box' component='div'>
-                    <IconButton
-                        onClick={() => setModalOpen(false)}
-                        sx={{ alignSelf: 'end' }}
-                    >
+                    <IconButton onClick={closeModal} sx={{ alignSelf: 'end' }}>
                         <CloseIcon fontSize='medium' />
                     </IconButton>
                     {children}

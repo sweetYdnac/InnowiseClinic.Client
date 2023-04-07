@@ -2,35 +2,84 @@ import AppBar from '@mui/material/AppBar';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import { FunctionComponent, useEffect, useState } from 'react';
 
 import CustomizedModal from './customizedModal/CustomizedModal';
-import Login from '../pages/Login';
+import Login from './Login';
 import AuthorizationService from '../services/AuthorizationService';
-import Register from '../pages/Register';
+import Register from './Register';
+import { useNavigate } from 'react-router-dom';
+import { modalEvents } from '../events/events';
+import { EventType } from '../events/eventTypes';
 
-type loginMessage = 'Login' | 'Logout';
+export enum LoginMessage {
+    LOGIN = 'Login',
+    REGISTER = 'Register',
+    LOGOUT = 'Logout',
+}
 
 const Header: FunctionComponent = () => {
+    const navigate = useNavigate();
+
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-    const [loginMessage, setLoginMessage] = useState<loginMessage>(
-        AuthorizationService.isAuthorized() ? 'Logout' : 'Login'
+    const [loginMessage, setLoginMessage] = useState<LoginMessage>(
+        AuthorizationService.isAuthorized()
+            ? LoginMessage.LOGOUT
+            : LoginMessage.LOGIN
     );
 
-    useEffect(() => {
+    const updateButtonText = () => {
         setLoginMessage(
-            AuthorizationService.isAuthorized() ? 'Logout' : 'Login'
+            AuthorizationService.isAuthorized()
+                ? LoginMessage.LOGOUT
+                : LoginMessage.LOGIN
         );
-    }, [isLoginModalOpen, isRegisterModalOpen]);
+    };
+
+    const switchLoginModal = () => {
+        setIsLoginModalOpen(!isLoginModalOpen);
+        updateButtonText();
+    };
+    const switchRegisterModal = (data: { loginState: boolean }) => {
+        setIsLoginModalOpen(data?.loginState ?? !isLoginModalOpen);
+        setIsRegisterModalOpen(!isRegisterModalOpen);
+        updateButtonText();
+    };
+
+    useEffect(() => {
+        modalEvents.addListener(
+            `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`,
+            switchLoginModal
+        );
+        modalEvents.addListener(
+            `${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`,
+            switchRegisterModal
+        );
+
+        return () => {
+            modalEvents.removeListener(
+                `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`,
+                switchLoginModal
+            );
+            modalEvents.removeListener(
+                `${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`,
+                switchRegisterModal
+            );
+        };
+    }, [
+        isLoginModalOpen,
+        setIsLoginModalOpen,
+        isRegisterModalOpen,
+        setIsRegisterModalOpen,
+    ]);
 
     const handleLogin = () => {
         AuthorizationService.isAuthorized()
             ? (() => {
                   AuthorizationService.logout();
-                  setLoginMessage('Login');
+                  setLoginMessage(LoginMessage.LOGIN);
               })()
             : setIsLoginModalOpen(true);
     };
@@ -47,9 +96,16 @@ const Header: FunctionComponent = () => {
                 >
                     <MenuIcon />
                 </IconButton>
-                <Typography variant='h6' component='div' sx={{ flexGrow: 1 }}>
+                <Button onClick={() => navigate('/')} color='inherit'>
                     Innowise Clinic
-                </Typography>
+                </Button>
+
+                <Button
+                    onClick={() => navigate('/profiles/patients/create')}
+                    color='inherit'
+                >
+                    Create Patient
+                </Button>
 
                 <Button onClick={() => handleLogin()} color='inherit'>
                     {loginMessage}
@@ -57,19 +113,16 @@ const Header: FunctionComponent = () => {
 
                 <CustomizedModal
                     isOpen={isLoginModalOpen}
-                    setModalOpen={setIsLoginModalOpen}
+                    name={LoginMessage.LOGIN}
                 >
-                    <Login
-                        setLoginModalOpen={setIsLoginModalOpen}
-                        setRegisterModalOpen={setIsRegisterModalOpen}
-                    />
+                    <Login />
                 </CustomizedModal>
 
                 <CustomizedModal
                     isOpen={isRegisterModalOpen}
-                    setModalOpen={setIsRegisterModalOpen}
+                    name={LoginMessage.REGISTER}
                 >
-                    <Register setModalOpen={setIsRegisterModalOpen} />
+                    <Register />
                 </CustomizedModal>
             </Toolbar>
         </AppBar>

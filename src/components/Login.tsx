@@ -1,19 +1,24 @@
 import { FunctionComponent } from 'react';
 import Box from '@mui/material/Box';
-import PasswordInput from '../components/PasswordInput';
-import EmailAddressInput from '../components/EmailAddressInput';
+import PasswordInput from './PasswordInput';
+import EmailAddressInput from './EmailAddressInput';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import React from 'react';
-import GetRegisterRequestValidator from '../validators/authorization/RegisterRequestValidator';
-import Popup from '../components/Popup';
+import GetLoginRequestValidator from '../validators/authorization/LoginRequestValidator';
+import Popup from './Popup';
+import '../styles/ModalForm.css';
+import { modalEvents } from '../events/events';
+import { EventType } from '../events/eventTypes';
+import { LoginMessage } from './Header';
 
-interface RegisterProps {
-    setModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}
+interface LoginProps {}
 
-const Register: FunctionComponent<RegisterProps> = ({ setModalOpen }) => {
-    const validator = GetRegisterRequestValidator(setModalOpen);
+const Login: FunctionComponent<LoginProps> = ({}) => {
+    const validator = GetLoginRequestValidator();
+
+    const opedRegisterModel = () => {
+        modalEvents.emit(`${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`);
+    };
 
     return (
         <div
@@ -37,7 +42,7 @@ const Register: FunctionComponent<RegisterProps> = ({ setModalOpen }) => {
                 autoComplete='off'
             >
                 <Typography variant='h4' gutterBottom>
-                    Register
+                    Login
                 </Typography>
 
                 <EmailAddressInput
@@ -54,32 +59,37 @@ const Register: FunctionComponent<RegisterProps> = ({ setModalOpen }) => {
                     handleBlur={validator.formik.handleBlur}
                 />
 
-                <PasswordInput
-                    id='passwordConfirmation'
-                    displayName='Password Confirmation'
-                    isTouched={validator.formik.touched.passwordConfirmation}
-                    errors={validator.formik.errors.passwordConfirmation}
-                    handleChange={validator.formik.handleChange}
-                    handleBlur={validator.formik.handleBlur}
-                />
-
-                <Button
-                    type='submit'
-                    variant='contained'
-                    color='success'
-                    disabled={
-                        (validator.formik.errors.email?.length ?? 0) > 0 ||
-                        (validator.formik.errors.password?.length ?? 0) > 0 ||
-                        (validator.formik.errors.passwordConfirmation?.length ??
-                            0) > 0 ||
-                        !validator.formik.touched.email ||
-                        !validator.formik.touched.password ||
-                        !validator.formik.touched.passwordConfirmation
-                    }
-                    sx={{ marginTop: '20px' }}
+                <div
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'space-evenly',
+                        marginTop: '20px',
+                    }}
                 >
-                    Enter
-                </Button>
+                    <Button
+                        onClick={opedRegisterModel}
+                        variant='text'
+                        color='primary'
+                    >
+                        Register
+                    </Button>
+                    <Button
+                        type='submit'
+                        variant='contained'
+                        color='success'
+                        disabled={
+                            (validator.formik.errors.email?.length ?? 0) > 0 ||
+                            (validator.formik.errors.password?.length ?? 0) >
+                                0 ||
+                            !validator.formik.touched.email ||
+                            !validator.formik.touched.password
+                        }
+                    >
+                        Enter
+                    </Button>
+                </div>
             </Box>
 
             <Popup
@@ -93,4 +103,4 @@ const Register: FunctionComponent<RegisterProps> = ({ setModalOpen }) => {
     );
 };
 
-export default Register;
+export default Login;

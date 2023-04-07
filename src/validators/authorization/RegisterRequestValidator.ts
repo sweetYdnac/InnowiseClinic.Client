@@ -4,10 +4,11 @@ import AuthorizationService from '../../services/AuthorizationService';
 import { AxiosError } from 'axios';
 import { useState } from 'react';
 import IRegisterRequest from '../../types/IRegisterRequest';
+import { modalEvents } from '../../events/events';
+import { EventType } from '../../events/eventTypes';
+import { LoginMessage } from '../../components/Header';
 
-export default function GetRegisterRequestValidator(
-    setModalOpen: React.Dispatch<React.SetStateAction<boolean>>
-) {
+export default function GetRegisterRequestValidator() {
     const [errorMessage, setErrorMessage] = useState('');
 
     const formik = useFormik<IRegisterRequest>({
@@ -36,7 +37,12 @@ export default function GetRegisterRequestValidator(
         onSubmit: async (values) => {
             try {
                 await AuthorizationService.signUp(values);
-                setModalOpen(false);
+                modalEvents.emit(
+                    `${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`,
+                    {
+                        loginState: false,
+                    }
+                );
             } catch (error) {
                 if (error instanceof AxiosError) {
                     switch (error.response?.status) {
@@ -48,10 +54,8 @@ export default function GetRegisterRequestValidator(
                             formik.errors.password =
                                 error.response.data.errors?.Password?.[0] || '';
                             break;
-                        case 500:
-                            setErrorMessage(error.response.statusText);
-                            break;
                         default:
+                            console.log(error);
                             setErrorMessage('Unexpected error occurred');
                     }
                 }
