@@ -4,7 +4,7 @@ import Modal from '@mui/material/Modal';
 import CloseIcon from '@mui/icons-material/Close';
 import IconButton from '@mui/material/IconButton';
 import '../customizedModal/CustomizedModal.css';
-import { modalEvents } from '../../events/events';
+import { eventEmitter } from '../../events/events';
 import { EventType } from '../../events/eventTypes';
 
 interface CustomizedModalProps {
@@ -19,7 +19,7 @@ const CustomizedModal: FunctionComponent<CustomizedModalProps> = ({
     children,
 }: CustomizedModalProps) => {
     const closeModal = () => {
-        modalEvents.emit(`${EventType.SWITCH_MODAL} ${name}`);
+        eventEmitter.emit(`${EventType.SWITCH_MODAL} ${name}`);
     };
 
     return (

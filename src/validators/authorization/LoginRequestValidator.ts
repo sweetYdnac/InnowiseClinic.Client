@@ -1,16 +1,13 @@
 import { useFormik } from 'formik';
-import ILoginRequest from '../../types/ILoginRequest';
+import ILoginRequest from '../../types/authorization/requests/ILoginRequest';
 import * as Yup from 'yup';
 import AuthorizationService from '../../services/AuthorizationService';
 import { AxiosError } from 'axios';
-import { useState } from 'react';
-import { modalEvents } from '../../events/events';
+import { eventEmitter } from '../../events/events';
 import { EventType } from '../../events/eventTypes';
 import { LoginMessage } from '../../components/Header';
 
 export default function GetLoginRequestValidator() {
-    const [errorMessage, setErrorMessage] = useState('');
-
     const formik = useFormik<ILoginRequest>({
         initialValues: {
             email: '',
@@ -31,39 +28,26 @@ export default function GetLoginRequestValidator() {
         onSubmit: async (values) => {
             try {
                 await AuthorizationService.signIn(values);
-                modalEvents.emit(
+                eventEmitter.emit(
                     `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`
                 );
             } catch (error) {
-                if (error instanceof AxiosError) {
-                    switch (error.response?.status) {
-                        case 400:
-                            formik.errors.email =
-                                error.response.data.errors?.Email?.[0] ||
-                                error.response.data.Message ||
-                                '';
-                            formik.errors.password =
-                                error.response.data.errors?.Password?.[0] ||
-                                error.response.data.Message ||
-                                '';
-                            break;
-                        case 409:
-                            setErrorMessage(error.response.data.Message);
-                            break;
-                        case 500:
-                            setErrorMessage(error.response.statusText);
-                            break;
-                        default:
-                            setErrorMessage('Unexpected error occurred');
-                    }
+                if (
+                    error instanceof AxiosError &&
+                    error.response?.status === 400
+                ) {
+                    formik.errors.email =
+                        error.response.data.errors?.Email?.[0] ||
+                        error.response.data.Message ||
+                        '';
+                    formik.errors.password =
+                        error.response.data.errors?.Password?.[0] ||
+                        error.response.data.Message ||
+                        '';
                 }
             }
         },
     });
 
-    return {
-        formik,
-        errorMessage,
-        setErrorMessage,
-    };
+    return formik;
 }

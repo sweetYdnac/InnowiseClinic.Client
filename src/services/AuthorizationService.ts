@@ -1,19 +1,15 @@
 import https from '../utils/https-common';
-import ITokenResponse from '../types/ITokenResponse';
-import ILoginRequest from '../types/ILoginRequest';
-import IRegisterRequest from '../types/IRegisterRequest';
-import ICreatedResponse from '../types/ICreatedResponse';
+import ILoginRequest from '../types/authorization/requests/ILoginRequest';
+import ICreatedResponse from '../types/authorization/responses/ICreatedResponse';
 import jwt from 'jwt-decode';
-import { AxiosRequestConfig } from 'axios';
 import PatientsService from './PatientsService';
-import ICreatePatientRequest from '../types/profiles/patients/requests/ICreatePatientRequest';
+import ICreateProfileRequest from '../types/profile/requests/ICreateProfileRequest';
 import { NIL } from 'uuid';
-
-const config: AxiosRequestConfig<any> | undefined = {
-    headers: {
-        'Content-Type': 'application/json',
-    },
-};
+import ITokenResponse from '../types/authorization/responses/ITokenResponse';
+import IRegisterRequest from '../types/authorization/requests/IRegisterRequest';
+import { eventEmitter } from '../events/events';
+import { EventType } from '../events/eventTypes';
+import { LoginMessage } from '../components/Header';
 
 function setAuthData(accessToken: string, refreshToken: string) {
     localStorage.setItem('refreshToken', refreshToken);
@@ -37,7 +33,7 @@ const isAuthorized = () => {
 
 const signIn = async (data: ILoginRequest) => {
     return await https
-        .post<ITokenResponse>('/authorization/signIn', data, config)
+        .post<ITokenResponse>('/authorization/signIn', data)
         .then((response: any) => {
             setAuthData(response.data.accessToken, response.data.refreshToken);
         });
@@ -45,11 +41,11 @@ const signIn = async (data: ILoginRequest) => {
 
 const signUp = async (data: IRegisterRequest) => {
     return await https
-        .post<ICreatedResponse>('/authorization/signUp', data, config)
+        .post<ICreatedResponse>('/authorization/signUp', data)
         .then(async () => {
             await AuthorizationService.signIn(data as ILoginRequest).then(
                 async () => {
-                    let request: ICreatePatientRequest = {
+                    let request: ICreateProfileRequest = {
                         id: getAccountId(),
                         firstName: 'First Name',
                         lastName: 'Last Name',
@@ -74,13 +70,24 @@ const logout = () => {
 const refresh = async () => {
     let refreshToken = localStorage.getItem('refreshToken');
 
-    return await https
-        .post<ITokenResponse>('/authorization/refresh', refreshToken, config)
-        .then((response: any) => {
-            setAuthData(response.data.accessToken, response.data.refreshToken);
-
-            return response.data as ITokenResponse;
-        });
+    if (!refreshToken) {
+        eventEmitter.emit(`${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`);
+    } else {
+        await https
+            .post<ITokenResponse>('/authorization/refresh', { refreshToken })
+            .then((response: any) => {
+                if (!response.data) {
+                    eventEmitter.emit(
+                        `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`
+                    );
+                } else {
+                    setAuthData(
+                        response.data.accessToken,
+                        response.data.refreshToken
+                    );
+                }
+            });
+    }
 };
 
 const AuthorizationService = {
@@ -90,6 +97,7 @@ const AuthorizationService = {
     logout,
     refresh,
     getAccessToken,
+    getAccountId,
 };
 
 export default AuthorizationService;

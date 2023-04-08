@@ -1,24 +1,21 @@
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { AxiosError } from 'axios';
-import { useState } from 'react';
-import ICreatePatientRequest from '../../types/profiles/patients/requests/ICreatePatientRequest';
 import PatientsService from '../../services/PatientsService';
 import AuthorizationService from '../../services/AuthorizationService';
+import IProfileResponse from '../../types/profile/response/IProfileResponse';
 
-export default function GetLoginRequestValidator() {
-    const [errorMessage, setErrorMessage] = useState('');
-
-    const formik = useFormik<ICreatePatientRequest>({
-        initialValues: {
-            firstName: '',
-            lastName: '',
-            middleName: '',
-            dateOfBirth: '',
-            phoneNumber: '',
-            accountId: '',
-            photoId: '',
-        },
+export default function GetProfileValidator(profile: IProfileResponse) {
+    const formik = useFormik<IProfileResponse>({
+        // initialValues: {
+        //     firstName: '',
+        //     lastName: '',
+        //     middleName: '',
+        //     dateOfBirth: '',
+        //     phoneNumber: '',
+        //     photoId: '',
+        // },
+        initialValues: profile,
         validationSchema: Yup.object().shape({
             firstName: Yup.string().required('Please, enter a first name'),
             lastName: Yup.string().required('Please, enter a first name'),
@@ -27,9 +24,6 @@ export default function GetLoginRequestValidator() {
             phoneNumber: Yup.string()
                 .matches(/^\d+$/, `You've entered an invalid phone number`)
                 .required('Please, enter a phone number'),
-            accountId: Yup.string()
-                .notRequired()
-                .uuid('Entered accound id not a uuid'),
             photoId: Yup.string()
                 .notRequired()
                 .uuid('Entered accound id not a uuid'),
@@ -38,7 +32,10 @@ export default function GetLoginRequestValidator() {
         validateOnChange: false,
         onSubmit: async (values) => {
             try {
-                let response = await PatientsService.createPatient(values);
+                await PatientsService.updatePatient(
+                    AuthorizationService.getAccountId(),
+                    values
+                );
             } catch (error) {
                 if (error instanceof AxiosError) {
                     switch (error.response?.status) {
@@ -60,19 +57,11 @@ export default function GetLoginRequestValidator() {
                                 error.response.data.Message ||
                                 '';
                             break;
-                        case 401:
-                            await AuthorizationService.refresh();
-                        default:
-                            setErrorMessage('Unexpected error occurred');
                     }
                 }
             }
         },
     });
 
-    return {
-        formik,
-        errorMessage,
-        setErrorMessage,
-    };
+    return formik;
 }

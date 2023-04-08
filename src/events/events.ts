@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
 
-let modalEvents = new EventEmitter();
+let eventEmitter = new EventEmitter();
 
-export { modalEvents };
+export { eventEmitter };

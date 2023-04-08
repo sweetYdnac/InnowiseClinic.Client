@@ -1,26 +1,25 @@
 import https from '../utils/https-common';
-import ICreatePatientRequest from '../types/profiles/patients/requests/ICreatePatientRequest';
-import ICreatedResponse from '../types/ICreatedResponse';
-import { AxiosRequestConfig } from 'axios';
-import AuthorizationService from './AuthorizationService';
+import ICreateProfileRequest from '../types/profile/requests/ICreateProfileRequest';
+import ICreatedResponse from '../types/authorization/responses/ICreatedResponse';
+import IProfileResponse from '../types/profile/response/IProfileResponse';
+import IUpdateProfileRequest from '../types/profile/requests/IUpdateProfileRequest';
 
-const config: AxiosRequestConfig<any> | undefined = {
-    headers: {
-        'Content-Type': 'application/json',
-    },
+const getById = async (id: string) => {
+    return await https.get<IProfileResponse>(`/patients/${id}`);
 };
 
-const createPatient = async (data: ICreatePatientRequest) => {
-    return await https.post<ICreatedResponse>('/patients', data, {
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + AuthorizationService.getAccessToken(),
-        },
-    });
+const createPatient = async (data: ICreateProfileRequest) => {
+    return await https.post<ICreatedResponse>('/patients', data);
+};
+
+const updatePatient = async (id: string, data: IUpdateProfileRequest) => {
+    return await https.put(`/patients/${id}`, data);
 };
 
 const PatientsService = {
     createPatient,
+    getById,
+    updatePatient,
 };
 
 export default PatientsService;

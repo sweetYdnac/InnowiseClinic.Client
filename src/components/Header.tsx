@@ -6,12 +6,12 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { FunctionComponent, useEffect, useState } from 'react';
 
 import CustomizedModal from './customizedModal/CustomizedModal';
-import Login from './Login';
+import Login from './forms/Login';
 import AuthorizationService from '../services/AuthorizationService';
-import Register from './Register';
 import { useNavigate } from 'react-router-dom';
-import { modalEvents } from '../events/events';
+import { eventEmitter } from '../events/events';
 import { EventType } from '../events/eventTypes';
+import Register from './forms/Register';
 
 export enum LoginMessage {
     LOGIN = 'Login',
@@ -49,21 +49,21 @@ const Header: FunctionComponent = () => {
     };
 
     useEffect(() => {
-        modalEvents.addListener(
+        eventEmitter.addListener(
             `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`,
             switchLoginModal
         );
-        modalEvents.addListener(
+        eventEmitter.addListener(
             `${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`,
             switchRegisterModal
         );
 
         return () => {
-            modalEvents.removeListener(
+            eventEmitter.removeListener(
                 `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`,
                 switchLoginModal
             );
-            modalEvents.removeListener(
+            eventEmitter.removeListener(
                 `${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`,
                 switchRegisterModal
             );
@@ -100,11 +100,8 @@ const Header: FunctionComponent = () => {
                     Innowise Clinic
                 </Button>
 
-                <Button
-                    onClick={() => navigate('/profiles/patients/create')}
-                    color='inherit'
-                >
-                    Create Patient
+                <Button onClick={() => navigate('/profile')} color='inherit'>
+                    Profile
                 </Button>
 
                 <Button onClick={() => handleLogin()} color='inherit'>

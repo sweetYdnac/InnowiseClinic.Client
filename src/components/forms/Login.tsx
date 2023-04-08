@@ -1,23 +1,20 @@
 import { FunctionComponent } from 'react';
 import Box from '@mui/material/Box';
-import PasswordInput from './PasswordInput';
-import EmailAddressInput from './EmailAddressInput';
+import PasswordInput from '../PasswordInput';
+import EmailAddressInput from '../EmailAddressInput';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import GetLoginRequestValidator from '../validators/authorization/LoginRequestValidator';
-import Popup from './Popup';
-import '../styles/ModalForm.css';
-import { modalEvents } from '../events/events';
-import { EventType } from '../events/eventTypes';
-import { LoginMessage } from './Header';
+import GetLoginRequestValidator from '../../validators/authorization/LoginRequestValidator';
+import { eventEmitter } from '../../events/events';
+import { EventType } from '../../events/eventTypes';
+import { LoginMessage } from '../Header';
+import './styles/ModalForm.css';
 
-interface LoginProps {}
-
-const Login: FunctionComponent<LoginProps> = ({}) => {
+const Login: FunctionComponent = () => {
     const validator = GetLoginRequestValidator();
 
     const opedRegisterModel = () => {
-        modalEvents.emit(`${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`);
+        eventEmitter.emit(`${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`);
     };
 
     return (
@@ -29,7 +26,7 @@ const Login: FunctionComponent<LoginProps> = ({}) => {
             }}
         >
             <Box
-                onSubmit={validator.formik.handleSubmit}
+                onSubmit={validator.handleSubmit}
                 component='form'
                 sx={{
                     display: 'flex',
@@ -46,17 +43,17 @@ const Login: FunctionComponent<LoginProps> = ({}) => {
                 </Typography>
 
                 <EmailAddressInput
-                    isTouched={validator.formik.touched.email}
-                    errors={validator.formik.errors.email}
-                    handleChange={validator.formik.handleChange}
-                    handleBlur={validator.formik.handleBlur}
+                    isTouched={validator.touched.email}
+                    errors={validator.errors.email}
+                    handleChange={validator.handleChange}
+                    handleBlur={validator.handleBlur}
                 />
                 <PasswordInput
                     displayName='Password'
-                    isTouched={validator.formik.touched.password}
-                    errors={validator.formik.errors.password}
-                    handleChange={validator.formik.handleChange}
-                    handleBlur={validator.formik.handleBlur}
+                    isTouched={validator.touched.password}
+                    errors={validator.errors.password}
+                    handleChange={validator.handleChange}
+                    handleBlur={validator.handleBlur}
                 />
 
                 <div
@@ -80,25 +77,16 @@ const Login: FunctionComponent<LoginProps> = ({}) => {
                         variant='contained'
                         color='success'
                         disabled={
-                            (validator.formik.errors.email?.length ?? 0) > 0 ||
-                            (validator.formik.errors.password?.length ?? 0) >
-                                0 ||
-                            !validator.formik.touched.email ||
-                            !validator.formik.touched.password
+                            (validator.errors.email?.length ?? 0) > 0 ||
+                            (validator.errors.password?.length ?? 0) > 0 ||
+                            !validator.touched.email ||
+                            !validator.touched.password
                         }
                     >
                         Enter
                     </Button>
                 </div>
             </Box>
-
-            <Popup
-                style={{ position: 'inherit', marginTop: '20px' }}
-                color='error'
-                message={validator.errorMessage}
-                open={validator.errorMessage.length > 0}
-                onHandleClose={() => validator.setErrorMessage('')}
-            />
         </div>
     );
 };

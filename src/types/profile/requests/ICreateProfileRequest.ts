@@ -1,4 +1,4 @@
-export default interface ICreatePatientRequest {
+export default interface ICreateProfileRequest {
     id: string;
     firstName: string;
     lastName: string;

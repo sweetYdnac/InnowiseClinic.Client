@@ -2,15 +2,12 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import AuthorizationService from '../../services/AuthorizationService';
 import { AxiosError } from 'axios';
-import { useState } from 'react';
-import IRegisterRequest from '../../types/IRegisterRequest';
-import { modalEvents } from '../../events/events';
+import { eventEmitter } from '../../events/events';
 import { EventType } from '../../events/eventTypes';
 import { LoginMessage } from '../../components/Header';
+import IRegisterRequest from '../../types/authorization/requests/IRegisterRequest';
 
 export default function GetRegisterRequestValidator() {
-    const [errorMessage, setErrorMessage] = useState('');
-
     const formik = useFormik<IRegisterRequest>({
         initialValues: {
             email: '',
@@ -37,35 +34,27 @@ export default function GetRegisterRequestValidator() {
         onSubmit: async (values) => {
             try {
                 await AuthorizationService.signUp(values);
-                modalEvents.emit(
+                eventEmitter.emit(
                     `${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`,
                     {
                         loginState: false,
                     }
                 );
             } catch (error) {
-                if (error instanceof AxiosError) {
-                    switch (error.response?.status) {
-                        case 400:
-                            formik.errors.email =
-                                error.response.data.errors?.Email?.[0] ||
-                                error.response.data.Message ||
-                                '';
-                            formik.errors.password =
-                                error.response.data.errors?.Password?.[0] || '';
-                            break;
-                        default:
-                            console.log(error);
-                            setErrorMessage('Unexpected error occurred');
-                    }
+                if (
+                    error instanceof AxiosError &&
+                    error.response?.status === 400
+                ) {
+                    formik.errors.email =
+                        error.response.data.errors?.Email?.[0] ||
+                        error.response.data.Message ||
+                        '';
+                    formik.errors.password =
+                        error.response.data.errors?.Password?.[0] || '';
                 }
             }
         },
     });
 
-    return {
-        formik,
-        errorMessage,
-        setErrorMessage,
-    };
+    return formik;
 }
