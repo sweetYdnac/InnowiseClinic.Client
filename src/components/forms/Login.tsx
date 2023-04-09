@@ -4,14 +4,68 @@ import PasswordInput from '../PasswordInput';
 import EmailAddressInput from '../EmailAddressInput';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import GetLoginRequestValidator from '../../validators/authorization/LoginRequestValidator';
 import { eventEmitter } from '../../events/events';
 import { EventType } from '../../events/eventTypes';
 import { LoginMessage } from '../Header';
 import './styles/ModalForm.css';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm } from 'react-hook-form';
+import AuthorizationService from '../../services/AuthorizationService';
+import ILoginRequest from '../../types/authorization/requests/ILoginRequest';
+import { AxiosError } from 'axios';
+
+const validationSchema = yup.object().shape({
+    email: yup
+        .string()
+        .required('Please, enter the email')
+        .email(`You've entered an invalid email`),
+    password: yup
+        .string()
+        .min(6, 'Password must be at least 6 characters')
+        .max(15, 'Password must be less than 15 characters')
+        .required('Please, enter the password'),
+});
 
 const Login: FunctionComponent = () => {
-    const validator = GetLoginRequestValidator();
+    const {
+        register,
+        handleSubmit,
+        setError,
+        formState: { errors, touchedFields },
+    } = useForm<ILoginRequest>({
+        mode: 'onBlur',
+        resolver: yupResolver(validationSchema),
+        defaultValues: {
+            email: '',
+            password: '',
+        },
+    });
+
+    const onSubmit = async (data: ILoginRequest) => {
+        try {
+            await AuthorizationService.signIn(data);
+            eventEmitter.emit(
+                `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`
+            );
+        } catch (error) {
+            if (error instanceof AxiosError && error.response?.status === 400) {
+                setError('email', {
+                    message:
+                        error.response.data.errors?.Email?.[0] ||
+                        error.response.data.Message ||
+                        '',
+                });
+
+                setError('password', {
+                    message:
+                        error.response.data.errors?.Password?.[0] ||
+                        error.response.data.Message ||
+                        '',
+                });
+            }
+        }
+    };
 
     const opedRegisterModel = () => {
         eventEmitter.emit(`${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`);
@@ -26,7 +80,7 @@ const Login: FunctionComponent = () => {
             }}
         >
             <Box
-                onSubmit={validator.handleSubmit}
+                onSubmit={handleSubmit(onSubmit)}
                 component='form'
                 sx={{
                     display: 'flex',
@@ -43,17 +97,16 @@ const Login: FunctionComponent = () => {
                 </Typography>
 
                 <EmailAddressInput
-                    isTouched={validator.touched.email}
-                    errors={validator.errors.email}
-                    handleChange={validator.handleChange}
-                    handleBlur={validator.handleBlur}
+                    displayName='Email Address'
+                    isTouched={touchedFields.email}
+                    errors={errors.email?.message}
+                    register={register('email')}
                 />
                 <PasswordInput
                     displayName='Password'
-                    isTouched={validator.touched.password}
-                    errors={validator.errors.password}
-                    handleChange={validator.handleChange}
-                    handleBlur={validator.handleBlur}
+                    isTouched={touchedFields.password}
+                    errors={errors.password?.message}
+                    register={register('password')}
                 />
 
                 <div
@@ -77,10 +130,10 @@ const Login: FunctionComponent = () => {
                         variant='contained'
                         color='success'
                         disabled={
-                            (validator.errors.email?.length ?? 0) > 0 ||
-                            (validator.errors.password?.length ?? 0) > 0 ||
-                            !validator.touched.email ||
-                            !validator.touched.password
+                            (errors.email?.message?.length ?? 0) > 0 ||
+                            (errors.password?.message?.length ?? 0) > 0 ||
+                            !touchedFields.email ||
+                            !touchedFields.password
                         }
                     >
                         Enter

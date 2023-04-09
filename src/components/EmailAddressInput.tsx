@@ -1,23 +1,22 @@
 import TextField from '@mui/material/TextField';
-import { FunctionComponent, useState } from 'react';
+import { FunctionComponent } from 'react';
 import { AccountCircle } from '@mui/icons-material';
 import InputAdornment from '@mui/material/InputAdornment';
 import FormControl from '@mui/material/FormControl';
+import { UseFormRegisterReturn } from 'react-hook-form';
 
 interface EmailAddressInputProps {
+    displayName: string;
     isTouched: boolean | undefined;
-    name?: string;
     errors: string | undefined;
-    handleChange: (e: React.ChangeEvent<any>) => void;
-    handleBlur: (e: any) => void;
+    register: UseFormRegisterReturn<string>;
 }
 
 const EmailAddressInput: FunctionComponent<EmailAddressInputProps> = ({
+    displayName,
     isTouched,
-    name = 'email',
     errors,
-    handleChange,
-    handleBlur,
+    register,
 }: EmailAddressInputProps) => {
     return (
         <FormControl
@@ -26,25 +25,26 @@ const EmailAddressInput: FunctionComponent<EmailAddressInputProps> = ({
             error={(errors?.length ?? 0) > 0 && isTouched}
         >
             <TextField
-                id={name}
+                {...register}
                 required
                 label={
                     (errors?.length ?? 0) > 0 && isTouched
                         ? 'Error'
-                        : 'Email address'
+                        : displayName
                 }
                 placeholder='example@gmail.com'
                 variant='standard'
                 error={(errors?.length ?? 0) > 0 && isTouched}
                 helperText={isTouched ? errors : ''}
-                onChange={(e) => handleChange(e)}
-                onBlur={(e) => handleBlur(e)}
                 InputProps={{
                     startAdornment: (
                         <InputAdornment position='start'>
                             <AccountCircle />
                         </InputAdornment>
                     ),
+                }}
+                InputLabelProps={{
+                    shrink: true,
                 }}
             />
         </FormControl>

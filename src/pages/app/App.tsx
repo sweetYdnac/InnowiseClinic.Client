@@ -3,6 +3,7 @@ import Header from '../../components/Header';
 import Profile from '../../components/Profile';
 import Home from '../Home';
 import Popup from '../../components/Popup';
+import AuthVerify from '../../utils/AuthVerify';
 
 function App() {
     return (
@@ -15,6 +16,7 @@ function App() {
             </Routes>
 
             <Popup />
+            <AuthVerify />
         </>
     );
 }

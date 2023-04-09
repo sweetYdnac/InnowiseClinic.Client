@@ -5,25 +5,22 @@ import IconButton from '@mui/material/IconButton';
 import Input from '@mui/material/Input';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
-import React, { FunctionComponent, useState } from 'react';
+import { FunctionComponent, useState } from 'react';
 import KeyIcon from '@mui/icons-material/Key';
+import { UseFormRegisterReturn } from 'react-hook-form';
 
 interface PasswordInputProps {
-    isTouched: boolean | undefined;
-    id?: string;
     displayName: string;
+    isTouched: boolean | undefined;
     errors: string | undefined;
-    handleChange: (e: React.ChangeEvent<any>) => void;
-    handleBlur: (e: any) => void;
+    register: UseFormRegisterReturn<string>;
 }
 
 const PasswordInput: FunctionComponent<PasswordInputProps> = ({
-    isTouched,
-    id = 'password',
     displayName,
+    isTouched,
     errors,
-    handleChange,
-    handleBlur,
+    register,
 }: PasswordInputProps) => {
     const [showPassword, setShowPassword] = useState(false);
 
@@ -32,18 +29,15 @@ const PasswordInput: FunctionComponent<PasswordInputProps> = ({
             sx={{ m: 1, width: '75%' }}
             variant='standard'
             error={(errors?.length ?? 0) > 0 && isTouched}
+            required
         >
-            <InputLabel htmlFor={id}>
-                {(errors?.length ?? 0) > 0 && isTouched
-                    ? 'Error *'
-                    : `${displayName} *`}
+            <InputLabel htmlFor={register.name}>
+                {(errors?.length ?? 0) > 0 && isTouched ? 'Error' : displayName}
             </InputLabel>
             <Input
-                id={id}
-                required
+                {...register}
+                id={register.name}
                 type={showPassword ? 'text' : 'password'}
-                onChange={(e) => handleChange(e)}
-                onBlur={(e) => handleBlur(e)}
                 startAdornment={
                     <InputAdornment position='start'>
                         <KeyIcon />

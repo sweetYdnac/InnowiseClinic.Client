@@ -24,14 +24,14 @@ axiosInstance.interceptors.request.use((config) => {
 
 axiosInstance.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         switch (error.response?.status) {
             case 400: {
                 // Bad request is handling in specific validator for request;
                 throw error;
             }
             case 401: {
-                AuthorizationService.refresh();
+                await AuthorizationService.refresh();
                 break;
             }
             case 403: {

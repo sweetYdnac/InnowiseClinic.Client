@@ -71,7 +71,7 @@ const refresh = async () => {
     let refreshToken = localStorage.getItem('refreshToken');
 
     if (!refreshToken) {
-        eventEmitter.emit(`${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`);
+        // eventEmitter.emit(`${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`);
     } else {
         await https
             .post<ITokenResponse>('/authorization/refresh', { refreshToken })

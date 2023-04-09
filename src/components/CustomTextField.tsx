@@ -1,28 +1,23 @@
 import TextField from '@mui/material/TextField';
-import { FunctionComponent, useState } from 'react';
+import { FunctionComponent } from 'react';
 import FormControl from '@mui/material/FormControl';
 import { WorkMode } from './Profile';
+import { UseFormRegisterReturn } from 'react-hook-form';
 
 interface CustomTextFieldProps {
     workMode: WorkMode;
-    id: string;
     displayName: string;
-    value: string | undefined;
     isTouched: boolean | undefined;
     errors: string | undefined;
-    handleChange: (e: React.ChangeEvent<any>) => void;
-    handleBlur: (e: any) => void;
+    register: UseFormRegisterReturn<string>;
 }
 
 const CustomTextField: FunctionComponent<CustomTextFieldProps> = ({
     workMode,
-    id,
     displayName,
-    value,
     isTouched,
     errors,
-    handleChange,
-    handleBlur,
+    register,
 }: CustomTextFieldProps) => {
     return (
         <FormControl
@@ -33,7 +28,7 @@ const CustomTextField: FunctionComponent<CustomTextFieldProps> = ({
             }
         >
             <TextField
-                id={id}
+                {...register}
                 label={
                     workMode === 'view'
                         ? displayName
@@ -41,19 +36,18 @@ const CustomTextField: FunctionComponent<CustomTextFieldProps> = ({
                         ? 'Error'
                         : displayName
                 }
-                defaultValue={value}
-                placeholder={displayName}
-                variant='outlined'
+                variant='standard'
                 error={
                     workMode === 'edit' &&
                     (errors?.length ?? 0) > 0 &&
                     isTouched
                 }
                 helperText={workMode === 'edit' && isTouched ? errors : ''}
-                onChange={(e) => handleChange(e)}
-                onBlur={(e) => handleBlur(e)}
                 InputProps={{
                     readOnly: workMode === 'view',
+                }}
+                InputLabelProps={{
+                    shrink: true,
                 }}
             />
         </FormControl>

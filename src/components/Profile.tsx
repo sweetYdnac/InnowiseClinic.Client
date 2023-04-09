@@ -1,11 +1,13 @@
 import Button from '@mui/material/Button';
-import { FunctionComponent, useEffect, useMemo, useState } from 'react';
+import { FunctionComponent, useState } from 'react';
 import PatientsService from '../services/PatientsService';
 import AuthorizationService from '../services/AuthorizationService';
 import IProfileResponse from '../types/profile/response/IProfileResponse';
 import Box from '@mui/material/Box';
 import CustomTextField from './CustomTextField';
-import GetProfileValidator from '../validators/profiles/ProfileValidator';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 export type WorkMode = 'view' | 'edit';
 
@@ -13,28 +15,43 @@ interface ProfileProps {
     workMode?: WorkMode;
 }
 
+const validationSchema = yup.object().shape({
+    firstName: yup.string().required('Please, enter a first name'),
+    lastName: yup.string().required('Please, enter a first name'),
+    middleName: yup.string().notRequired(),
+    dateOfBirth: yup.string().required('Please, select the date'),
+    phoneNumber: yup
+        .string()
+        .matches(/^\d+$/, `You've entered an invalid phone number`)
+        .required('Please, enter a phone number'),
+    photoId: yup.string().notRequired().uuid('Entered accound id not a uuid'),
+});
+
 const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
     const [mode, setWorkMode] = useState(workMode);
-    const [profile, setProfile] = useState<IProfileResponse>();
 
-    const validator = GetProfileValidator(profile as IProfileResponse);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, touchedFields },
+        reset,
+    } = useForm<IProfileResponse>({
+        mode: 'onBlur',
+        resolver: yupResolver(validationSchema),
+        defaultValues: async () => {
+            return (
+                await PatientsService.getById(
+                    AuthorizationService.getAccountId()
+                )
+            ).data;
+        },
+    });
 
     const switchWorkMode = () => {
         setWorkMode(mode === 'view' ? 'edit' : 'view');
-        validator.setTouched({});
+
+        reset();
     };
-
-    async function getProfile() {
-        await PatientsService.getById(AuthorizationService.getAccountId()).then(
-            (response) => {
-                setProfile(response.data as IProfileResponse);
-            }
-        );
-    }
-
-    useEffect(() => {
-        getProfile();
-    }, []);
 
     return (
         <>
@@ -54,24 +71,10 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
             >
                 <CustomTextField
                     workMode={mode}
-                    id='firstName'
                     displayName='First Name'
-                    value={profile?.firstName}
-                    isTouched={validator.touched.firstName}
-                    errors={validator.errors.firstName}
-                    handleChange={validator.handleChange}
-                    handleBlur={validator.handleBlur}
-                />
-
-                <CustomTextField
-                    workMode={mode}
-                    id='lastName'
-                    displayName='Last Name'
-                    value={profile?.lastName}
-                    isTouched={validator.touched.lastName}
-                    errors={validator.errors.lastName}
-                    handleChange={validator.handleChange}
-                    handleBlur={validator.handleBlur}
+                    isTouched={touchedFields.firstName}
+                    errors={errors.firstName?.message}
+                    register={register('firstName')}
                 />
 
                 <Button variant='contained' component='label'>
