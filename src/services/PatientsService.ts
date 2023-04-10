@@ -3,9 +3,16 @@ import ICreateProfileRequest from '../types/profile/requests/ICreateProfileReque
 import ICreatedResponse from '../types/authorization/responses/ICreatedResponse';
 import IProfileResponse from '../types/profile/response/IProfileResponse';
 import IUpdateProfileRequest from '../types/profile/requests/IUpdateProfileRequest';
+import dayjs from 'dayjs';
 
 const getById = async (id: string) => {
-    return await https.get<IProfileResponse>(`/patients/${id}`);
+    const response = (await https.get<IProfileResponse>(`/patients/${id}`))
+        .data;
+
+    return {
+        ...response,
+        dateOfBirth: dayjs(response.dateOfBirth),
+    } as IProfileResponse;
 };
 
 const createPatient = async (data: ICreateProfileRequest) => {

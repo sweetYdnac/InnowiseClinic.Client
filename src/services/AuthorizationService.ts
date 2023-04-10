@@ -67,6 +67,7 @@ const logout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('accountId');
+    dispatchEvent(new Event('storage'));
 };
 
 const refresh = async () => {
