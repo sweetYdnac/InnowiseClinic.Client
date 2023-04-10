@@ -1,13 +1,14 @@
 import Button from '@mui/material/Button';
 import { FunctionComponent, useState } from 'react';
-import PatientsService from '../services/PatientsService';
-import AuthorizationService from '../services/AuthorizationService';
-import IProfileResponse from '../types/profile/response/IProfileResponse';
+import PatientsService from '../../services/PatientsService';
+import AuthorizationService from '../../services/AuthorizationService';
+import IProfileResponse from '../../types/profile/response/IProfileResponse';
 import Box from '@mui/material/Box';
-import CustomTextField from './CustomTextField';
+import CustomTextField from '../../components/CustomTextField';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import DatePicker from 'react-datepicker';
 
 export type WorkMode = 'view' | 'edit';
 
@@ -52,7 +53,6 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
 
         reset();
     };
-
     return (
         <>
             <Button onClick={switchWorkMode}>{mode}</Button>
@@ -76,6 +76,24 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                     errors={errors.firstName?.message}
                     register={register('firstName')}
                 />
+
+                <CustomTextField
+                    workMode={mode}
+                    displayName='Last Name'
+                    isTouched={touchedFields.lastName}
+                    errors={errors.lastName?.message}
+                    register={register('lastName')}
+                />
+
+                <CustomTextField
+                    workMode={mode}
+                    displayName='Middle Name'
+                    isTouched={touchedFields.middleName}
+                    errors={errors.middleName?.message}
+                    register={register('middleName')}
+                />
+
+                <DatePicker />
 
                 <Button variant='contained' component='label'>
                     Upload

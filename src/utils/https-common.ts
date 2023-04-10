@@ -35,28 +35,19 @@ axiosInstance.interceptors.response.use(
                 break;
             }
             case 403: {
+                window.location.href = '/';
                 eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
                     message: 'You are not allowed to perform this action',
                 } as PopupData);
                 break;
             }
-            case 404: {
-                eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
-                    message: error.response.data.Message,
-                } as PopupData);
-                break;
-            }
+            case 404:
             case 409:
                 eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
                     message: error.response.data.Message,
                 } as PopupData);
                 break;
-            case 500: {
-                eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
-                    message: 'Unknown error occurred',
-                } as PopupData);
-                break;
-            }
+            case 500:
             default: {
                 console.log(error);
                 eventEmitter.emit(`${EventType.SHOW_POPUP}`, {

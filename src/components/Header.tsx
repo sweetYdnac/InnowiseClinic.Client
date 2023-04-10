@@ -20,35 +20,43 @@ export enum LoginMessage {
 }
 
 const Header: FunctionComponent = () => {
-    const navigate = useNavigate();
-
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-    const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+    const [accessToken, setAccessToken] = useState(
+        AuthorizationService.getAccessToken()
+    );
     const [loginMessage, setLoginMessage] = useState<LoginMessage>(
-        AuthorizationService.isAuthorized()
-            ? LoginMessage.LOGOUT
-            : LoginMessage.LOGIN
+        accessToken ? LoginMessage.LOGOUT : LoginMessage.LOGIN
     );
 
-    const updateButtonText = () => {
-        setLoginMessage(
-            AuthorizationService.isAuthorized()
-                ? LoginMessage.LOGOUT
-                : LoginMessage.LOGIN
-        );
-    };
-
-    const switchLoginModal = () => {
-        setIsLoginModalOpen(!isLoginModalOpen);
-        updateButtonText();
-    };
-    const switchRegisterModal = (data: { loginState: boolean }) => {
-        setIsLoginModalOpen(data?.loginState ?? !isLoginModalOpen);
-        setIsRegisterModalOpen(!isRegisterModalOpen);
-        updateButtonText();
-    };
+    const navigate = useNavigate();
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
     useEffect(() => {
+        const handleStorageChange = () => {
+            setAccessToken(AuthorizationService.getAccessToken());
+            setLoginMessage(
+                AuthorizationService.getAccessToken()
+                    ? LoginMessage.LOGOUT
+                    : LoginMessage.LOGIN
+            );
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, []);
+
+    useEffect(() => {
+        const switchLoginModal = () => {
+            setIsLoginModalOpen(!isLoginModalOpen);
+        };
+        const switchRegisterModal = (data: { loginState: boolean }) => {
+            setIsLoginModalOpen(data?.loginState ?? !isLoginModalOpen);
+            setIsRegisterModalOpen(!isRegisterModalOpen);
+        };
+
         eventEmitter.addListener(
             `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`,
             switchLoginModal
@@ -73,15 +81,11 @@ const Header: FunctionComponent = () => {
         setIsLoginModalOpen,
         isRegisterModalOpen,
         setIsRegisterModalOpen,
+        accessToken,
     ]);
 
-    const handleLogin = () => {
-        AuthorizationService.isAuthorized()
-            ? (() => {
-                  AuthorizationService.logout();
-                  setLoginMessage(LoginMessage.LOGIN);
-              })()
-            : setIsLoginModalOpen(true);
+    const handleLoginButton = () => {
+        accessToken ? AuthorizationService.logout() : setIsLoginModalOpen(true);
     };
 
     return (
@@ -96,25 +100,29 @@ const Header: FunctionComponent = () => {
                 >
                     <MenuIcon />
                 </IconButton>
+
                 <Button onClick={() => navigate('/')} color='inherit'>
                     Innowise Clinic
                 </Button>
 
-                <Button onClick={() => navigate('/profile')} color='inherit'>
-                    Profile
-                </Button>
+                {accessToken && (
+                    <Button
+                        onClick={() => navigate('/profile')}
+                        color='inherit'
+                    >
+                        Profile
+                    </Button>
+                )}
 
-                <Button onClick={() => handleLogin()} color='inherit'>
+                <Button onClick={() => handleLoginButton()} color='inherit'>
                     {loginMessage}
                 </Button>
-
                 <CustomizedModal
                     isOpen={isLoginModalOpen}
                     name={LoginMessage.LOGIN}
                 >
                     <Login />
                 </CustomizedModal>
-
                 <CustomizedModal
                     isOpen={isRegisterModalOpen}
                     name={LoginMessage.REGISTER}

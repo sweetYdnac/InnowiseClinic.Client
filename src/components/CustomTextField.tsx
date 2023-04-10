@@ -1,7 +1,7 @@
 import TextField from '@mui/material/TextField';
 import { FunctionComponent } from 'react';
 import FormControl from '@mui/material/FormControl';
-import { WorkMode } from './Profile';
+import { WorkMode } from '../pages/profile/Profile';
 import { UseFormRegisterReturn } from 'react-hook-form';
 
 interface CustomTextFieldProps {

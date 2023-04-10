@@ -10,10 +10,12 @@ import IRegisterRequest from '../types/authorization/requests/IRegisterRequest';
 import { eventEmitter } from '../events/events';
 import { EventType } from '../events/eventTypes';
 import { LoginMessage } from '../components/Header';
+import { AxiosResponse } from 'axios';
 
 function setAuthData(accessToken: string, refreshToken: string) {
     localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('accessToken', accessToken);
+    dispatchEvent(new Event('storage'));
 
     let decoded = jwt<any>(accessToken);
     localStorage.setItem('accountId', decoded.sub);
@@ -24,7 +26,7 @@ const getAccountId = () => {
 };
 
 const getAccessToken = () => {
-    return localStorage.getItem('accessToken') ?? NIL;
+    return localStorage.getItem('accessToken');
 };
 
 const isAuthorized = () => {
@@ -70,24 +72,21 @@ const logout = () => {
 const refresh = async () => {
     let refreshToken = localStorage.getItem('refreshToken');
 
-    if (!refreshToken) {
-        // eventEmitter.emit(`${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`);
-    } else {
-        await https
-            .post<ITokenResponse>('/authorization/refresh', { refreshToken })
-            .then((response: any) => {
-                if (!response.data) {
-                    eventEmitter.emit(
-                        `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`
-                    );
-                } else {
-                    setAuthData(
-                        response.data.accessToken,
-                        response.data.refreshToken
-                    );
-                }
-            });
-    }
+    await https
+        .post<ITokenResponse>('/authorization/refresh', { refreshToken })
+        .then((response: AxiosResponse<ITokenResponse, any>) => {
+            if (!response.data.accessToken || !response.data.refreshToken) {
+                window.location.href = '/';
+                eventEmitter.emit(
+                    `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`
+                );
+            } else {
+                setAuthData(
+                    response.data.accessToken,
+                    response.data.refreshToken
+                );
+            }
+        });
 };
 
 const AuthorizationService = {
