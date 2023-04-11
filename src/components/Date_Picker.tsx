@@ -6,8 +6,8 @@ import {
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { FunctionComponent } from 'react';
 import { Control, Controller } from 'react-hook-form';
-import { WorkMode } from '../pages/profile/Profile';
 import dayjs from 'dayjs';
+import { WorkMode } from '../types/common/WorkMode';
 
 interface DatepickerProps {
     workMode: WorkMode;
@@ -54,12 +54,27 @@ const Datepicker: FunctionComponent<DatepickerProps> = ({
                             value={field.value as dayjs.Dayjs}
                             onChange={(date) => field.onChange(date)}
                             onAccept={() => field.onBlur()}
+                            onSelectedSectionsChange={() => field.onBlur()}
                             slotProps={{
                                 textField: {
+                                    sx: { m: 1, width: '75%' },
+                                    color:
+                                        workMode === 'edit' &&
+                                        (errors?.length ?? 0) > 0 &&
+                                        isTouched
+                                            ? 'error'
+                                            : 'success',
+                                    focused:
+                                        workMode === 'edit' &&
+                                        (errors?.length ?? 0) === 0 &&
+                                        isTouched,
                                     variant: 'standard',
                                     helperText: isTouched ? errors : '',
                                     error:
                                         (errors?.length ?? 0) > 0 && isTouched,
+                                },
+                                popper: {
+                                    placement: 'auto',
                                 },
                             }}
                         />

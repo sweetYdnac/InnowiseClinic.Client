@@ -5,6 +5,7 @@ import { EventType } from '../events/eventTypes';
 import { eventEmitter } from '../events/events';
 import AuthorizationService from '../services/AuthorizationService';
 import jwt from 'jwt-decode';
+import Loader from '../components/Loader';
 
 interface ProtectedRouteProps {
     children: ReactNode;
@@ -47,7 +48,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         }
     }, [navigate]);
 
-    return <>{display && children}</>;
+    return <>{display ? children : <Loader isOpen={!display} />}</>;
 };
 
 export default ProtectedRoute;

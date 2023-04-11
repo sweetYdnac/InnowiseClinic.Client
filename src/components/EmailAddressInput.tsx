@@ -37,6 +37,7 @@ const EmailAddressInput: FunctionComponent<EmailAddressInputProps> = ({
                 error={(errors?.length ?? 0) > 0 && isTouched}
                 helperText={isTouched ? errors : ''}
                 InputProps={{
+                    inputMode: 'email',
                     startAdornment: (
                         <InputAdornment position='start'>
                             <AccountCircle />

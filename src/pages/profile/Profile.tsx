@@ -1,19 +1,25 @@
-import Button from '@mui/material/Button';
-import { FunctionComponent, useState } from 'react';
-import PatientsService from '../../services/PatientsService';
-import AuthorizationService from '../../services/AuthorizationService';
-import IProfileResponse from '../../types/profile/response/IProfileResponse';
-import Box from '@mui/material/Box';
-import CustomTextField from '../../components/CustomTextField';
-import { Controller, useForm } from 'react-hook-form';
-import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import { AxiosError } from 'axios';
+import dayjs from 'dayjs';
+import { FunctionComponent, useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import CustomDialog from '../../components/CustomDialog';
 import Datepicker from '../../components/Date_Picker';
+import NumericTextfield from '../../components/NumericTextfield';
+import PhotoDownload from '../../components/PhotoDownload';
+import Textfield from '../../components/Textfield';
+import { EventType } from '../../events/eventTypes';
+import { eventEmitter } from '../../events/events';
+import AuthorizationService from '../../services/AuthorizationService';
+import DocumentsService from '../../services/DocumentsService';
+import PatientsService from '../../services/PatientsService';
+import { WorkMode } from '../../types/common/WorkMode';
+import IUpdateProfileForm from '../../types/profile/IUpdateProfileForm';
 
-export type WorkMode = 'view' | 'edit';
+const closeDialogEventName = 'updateProfile';
 
 interface ProfileProps {
     workMode?: WorkMode;
@@ -23,47 +29,146 @@ const validationSchema = yup.object().shape({
     firstName: yup.string().required('Please, enter a first name'),
     lastName: yup.string().required('Please, enter a first name'),
     middleName: yup.string().notRequired(),
-    dateOfBirth: yup.date().required('Please, select the date'),
+    dateOfBirth: yup
+        .date()
+        .required('Please, select the date')
+        .typeError('Please, enter a valid date'),
     phoneNumber: yup
         .string()
-        .matches(/^\d+$/, `You've entered an invalid phone number`)
-        .required('Please, enter a phone number'),
+        .required('Please, enter a phone number')
+        .matches(/^\d+$/, `You've entered an invalid phone number`),
     photoId: yup.string().notRequired().uuid('Entered accound id not a uuid'),
+    photo: yup.string().notRequired(),
 });
 
 const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
     const [mode, setWorkMode] = useState(workMode);
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
     const {
         register,
         handleSubmit,
-        formState: { errors, touchedFields },
         reset,
-        control,
         getValues,
-    } = useForm<IProfileResponse>({
+        setError,
+        formState: { errors, touchedFields, defaultValues },
+        control,
+    } = useForm<IUpdateProfileForm>({
         mode: 'onBlur',
         resolver: yupResolver(validationSchema),
         defaultValues: async () => {
-            return await PatientsService.getById(
+            let values = (await PatientsService.getById(
                 AuthorizationService.getAccountId()
-            );
+            )) as IUpdateProfileForm;
+
+            if (values.photoId) {
+                let photo = await DocumentsService.getById(values.photoId);
+                values.photo = photo;
+            }
+
+            return values;
         },
     });
 
-    const switchWorkMode = () => {
-        setWorkMode(mode === 'view' ? 'edit' : 'view');
-
+    const enableEditMode = () => {
+        setWorkMode('edit');
         reset();
     };
+
+    const handleDeclineDialog = () => {
+        setIsCancelModalOpen(false);
+    };
+
+    const onSubmit = async (data: IUpdateProfileForm) => {
+        try {
+            let { photoId, photo, dateOfBirth, ...rest } = data;
+
+            const request = {
+                ...rest,
+                dateOfBirth: dayjs(dateOfBirth).format('YYYY-MM-DD'),
+            };
+
+            await PatientsService.updatePatient(
+                AuthorizationService.getAccountId(),
+                request
+            );
+
+            if (getValues('photo') !== defaultValues?.photo) {
+                await DocumentsService.update(photoId, photo);
+            }
+
+            setWorkMode('view');
+            reset({
+                ...getValues(),
+            });
+        } catch (error) {
+            if (error instanceof AxiosError && error.response?.status === 400) {
+                console.log(error.response.data.errors);
+                setError('firstName', {
+                    message:
+                        error.response.data.errors?.FirstName?.[0] ??
+                        error.response.data.Message ??
+                        '',
+                });
+                setError('lastName', {
+                    message:
+                        error.response.data.errors?.LastName?.[0] ??
+                        error.response.data.Message ??
+                        '',
+                });
+                setError('dateOfBirth', {
+                    message:
+                        error.response.data.errors?.dateOfBirth?.[0] ??
+                        error.response.data.Message ??
+                        '',
+                });
+                setError('phoneNumber', {
+                    message:
+                        error.response.data.errors?.PhoneNumber?.[0] ??
+                        error.response.data.Message ??
+                        '',
+                });
+            }
+        }
+    };
+
+    useEffect(() => {
+        const handleSubmitDialog = () => {
+            reset();
+            setWorkMode('view');
+            setIsCancelModalOpen(false);
+        };
+
+        eventEmitter.addListener(
+            `${EventType.DECLINE_DIALOG} ${closeDialogEventName}`,
+            handleDeclineDialog
+        );
+        eventEmitter.addListener(
+            `${EventType.SUBMIT_DIALOG} ${closeDialogEventName}`,
+            handleSubmitDialog
+        );
+
+        return () => {
+            eventEmitter.removeListener(
+                `${EventType.DECLINE_DIALOG} ${closeDialogEventName}`,
+                handleDeclineDialog
+            );
+            eventEmitter.removeListener(
+                `${EventType.SUBMIT_DIALOG} ${closeDialogEventName}`,
+                handleSubmitDialog
+            );
+        };
+    }, [reset]);
 
     return (
         <>
             {JSON.stringify(getValues()) !== JSON.stringify({}) && (
                 <>
-                    <Button onClick={switchWorkMode}>{mode}</Button>
+                    {mode === 'view' && (
+                        <Button onClick={enableEditMode}>Edit</Button>
+                    )}
                     <Box
-                        // onSubmit={validator.handleSubmit}
+                        onSubmit={handleSubmit(onSubmit)}
                         component={mode === 'view' ? 'div' : 'form'}
                         sx={{
                             display: 'flex',
@@ -75,7 +180,13 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                         noValidate
                         autoComplete='off'
                     >
-                        <CustomTextField
+                        <PhotoDownload
+                            workMode={mode}
+                            photo={getValues('photo')}
+                            register={register('photo')}
+                        />
+
+                        <Textfield
                             workMode={mode}
                             displayName='First Name'
                             isTouched={touchedFields.firstName}
@@ -83,7 +194,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                             register={register('firstName')}
                         />
 
-                        <CustomTextField
+                        <Textfield
                             workMode={mode}
                             displayName='Last Name'
                             isTouched={touchedFields.lastName}
@@ -91,46 +202,13 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                             register={register('lastName')}
                         />
 
-                        <CustomTextField
+                        <Textfield
                             workMode={mode}
                             displayName='Middle Name'
                             isTouched={touchedFields.middleName}
                             errors={errors.middleName?.message}
                             register={register('middleName')}
                         />
-
-                        {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <Controller
-                                name='dateOfBirth'
-                                control={control}
-                                render={({ field }) => (
-                                    <>
-                                        <DatePicker
-                                            // readOnly
-                                            disableFuture
-                                            label='Date of Birth'
-                                            views={['year', 'month', 'day']}
-                                            openTo='year'
-                                            format='DD MMMM YYYY'
-                                            {...field}
-                                            defaultValue={field.value}
-                                            value={field.value}
-                                            onChange={(date) =>
-                                                field.onChange(date)
-                                            }
-                                            onAccept={() => field.onBlur()}
-                                            slotProps={{
-                                                textField: {
-                                                    variant: 'standard',
-                                                    helperText:
-                                                        'MM / DD / YYYY',
-                                                },
-                                            }}
-                                        />
-                                    </>
-                                )}
-                            />
-                        </LocalizationProvider> */}
 
                         <Datepicker
                             workMode={mode}
@@ -141,15 +219,61 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                             control={control}
                         />
 
-                        <Button variant='contained' component='label'>
-                            Upload
-                            <input
-                                hidden
-                                accept='image/*'
-                                multiple
-                                type='file'
-                            />
-                        </Button>
+                        <NumericTextfield
+                            workMode={mode}
+                            displayName='Phone Number'
+                            isTouched={touchedFields.phoneNumber}
+                            errors={errors.phoneNumber?.message}
+                            register={register('phoneNumber')}
+                        />
+
+                        {mode === 'edit' && (
+                            <div
+                                style={{
+                                    width: '75%',
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-evenly',
+                                }}
+                            >
+                                <Button
+                                    variant='contained'
+                                    color='error'
+                                    onClick={() => setIsCancelModalOpen(true)}
+                                >
+                                    Cancel
+                                </Button>
+
+                                <CustomDialog
+                                    isOpen={isCancelModalOpen}
+                                    name={closeDialogEventName}
+                                    title='Discard changes?'
+                                    content='Do you really want to cancel? Changes will not be saved.'
+                                />
+
+                                <Button
+                                    type='submit'
+                                    variant='contained'
+                                    color='success'
+                                    disabled={
+                                        (errors.firstName?.message?.length ??
+                                            0) > 0 ||
+                                        (errors.lastName?.message?.length ??
+                                            0) > 0 ||
+                                        (errors.dateOfBirth?.message?.length ??
+                                            0) > 0 ||
+                                        (errors.phoneNumber?.message?.length ??
+                                            0) > 0 ||
+                                        !touchedFields.firstName ||
+                                        !touchedFields.lastName ||
+                                        !touchedFields.dateOfBirth ||
+                                        !touchedFields.phoneNumber
+                                    }
+                                >
+                                    Save changes
+                                </Button>
+                            </div>
+                        )}
                     </Box>
                 </>
             )}

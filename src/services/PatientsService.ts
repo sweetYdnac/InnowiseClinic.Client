@@ -2,8 +2,8 @@ import https from '../utils/https-common';
 import ICreateProfileRequest from '../types/profile/requests/ICreateProfileRequest';
 import ICreatedResponse from '../types/authorization/responses/ICreatedResponse';
 import IProfileResponse from '../types/profile/response/IProfileResponse';
-import IUpdateProfileRequest from '../types/profile/requests/IUpdateProfileRequest';
 import dayjs from 'dayjs';
+import IUpdateProfileRequest from '../types/profile/requests/IUpdateProfileRequest';
 
 const getById = async (id: string) => {
     const response = (await https.get<IProfileResponse>(`/patients/${id}`))
