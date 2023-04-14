@@ -19,7 +19,7 @@ const CustomizedModal: FunctionComponent<CustomizedModalProps> = ({
     children,
 }: CustomizedModalProps) => {
     const closeModal = () => {
-        eventEmitter.emit(`${EventType.SWITCH_MODAL} ${name}`);
+        eventEmitter.emit(`${EventType.CLICK_CLOSE_MODAL} ${name}`);
     };
 
     return (

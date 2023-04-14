@@ -7,4 +7,5 @@ export default interface IProfileResponse {
     dateOfBirth: dayjs.Dayjs;
     phoneNumber: string;
     photoId?: string;
+    isActive: boolean;
 }

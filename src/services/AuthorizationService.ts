@@ -76,15 +76,14 @@ const refresh = async () => {
     await https
         .post<ITokenResponse>('/authorization/refresh', { refreshToken })
         .then((response: AxiosResponse<ITokenResponse, any>) => {
+            setAuthData(
+                response.data.accessToken ?? '',
+                response.data.refreshToken ?? ''
+            );
+
             if (!response.data.accessToken || !response.data.refreshToken) {
-                window.location.href = '/';
                 eventEmitter.emit(
-                    `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`
-                );
-            } else {
-                setAuthData(
-                    response.data.accessToken,
-                    response.data.refreshToken
+                    `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`
                 );
             }
         });

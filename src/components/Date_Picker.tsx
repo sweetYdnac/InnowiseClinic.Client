@@ -4,13 +4,12 @@ import {
     LocalizationProvider,
 } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 import { FunctionComponent } from 'react';
 import { Control, Controller } from 'react-hook-form';
-import dayjs from 'dayjs';
-import { WorkMode } from '../types/common/WorkMode';
 
 interface DatepickerProps {
-    workMode: WorkMode;
+    readOnly: boolean;
     id: string;
     displayName: string;
     isTouched: boolean | undefined;
@@ -20,10 +19,11 @@ interface DatepickerProps {
     disablePast?: boolean;
     views?: DateView[];
     openTo?: DateView;
+    disabled?: boolean;
 }
 
 const Datepicker: FunctionComponent<DatepickerProps> = ({
-    workMode,
+    readOnly,
     id,
     displayName,
     isTouched,
@@ -33,16 +33,19 @@ const Datepicker: FunctionComponent<DatepickerProps> = ({
     disablePast = false,
     views = ['year', 'month', 'day'],
     openTo = 'year',
+    disabled = false,
 }: DatepickerProps) => {
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Controller
                 name={id}
                 control={control}
+                defaultValue=''
                 render={({ field }) => (
                     <>
                         <DatePicker
-                            readOnly={workMode === 'view'}
+                            disabled={disabled}
+                            readOnly={readOnly}
                             disableFuture={disableFuture}
                             disablePast={disablePast}
                             label={displayName}
@@ -59,13 +62,13 @@ const Datepicker: FunctionComponent<DatepickerProps> = ({
                                 textField: {
                                     sx: { m: 1, width: '75%' },
                                     color:
-                                        workMode === 'edit' &&
+                                        !readOnly &&
                                         (errors?.length ?? 0) > 0 &&
                                         isTouched
                                             ? 'error'
                                             : 'success',
                                     focused:
-                                        workMode === 'edit' &&
+                                        !readOnly &&
                                         (errors?.length ?? 0) === 0 &&
                                         isTouched,
                                     variant: 'standard',

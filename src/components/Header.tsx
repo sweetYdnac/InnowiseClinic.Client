@@ -12,24 +12,28 @@ import { useNavigate } from 'react-router-dom';
 import { eventEmitter } from '../events/events';
 import { EventType } from '../events/eventTypes';
 import Register from './forms/Register';
+import ProtectedRoute from '../utils/ProtectedRoute';
+import CreateAppointment from './forms/CreateAppointment';
 
 export enum LoginMessage {
     LOGIN = 'Login',
     REGISTER = 'Register',
     LOGOUT = 'Logout',
 }
+const createAppointmentModalEventMessage = 'createAppointment';
 
 const Header: FunctionComponent = () => {
     const [accessToken, setAccessToken] = useState(
         AuthorizationService.getAccessToken()
     );
-    const [loginMessage, setLoginMessage] = useState<LoginMessage>(
-        accessToken ? LoginMessage.LOGOUT : LoginMessage.LOGIN
-    );
-
     const navigate = useNavigate();
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+    const [loginMessage, setLoginMessage] = useState<LoginMessage>(
+        accessToken ? LoginMessage.LOGOUT : LoginMessage.LOGIN
+    );
+    const [isCreateAppointmentModalOpen, setIsCreateAppointmentModalOpen] =
+        useState(false);
 
     useEffect(() => {
         const handleStorageChange = () => {
@@ -57,23 +61,35 @@ const Header: FunctionComponent = () => {
             setIsRegisterModalOpen(!isRegisterModalOpen);
         };
 
+        const closeCreateAppointmentModal = () => {
+            setIsCreateAppointmentModalOpen(false);
+        };
+
         eventEmitter.addListener(
-            `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`,
+            `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`,
             switchLoginModal
         );
         eventEmitter.addListener(
-            `${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`,
+            `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`,
             switchRegisterModal
+        );
+        eventEmitter.addListener(
+            `${EventType.SUBMIT_DIALOG} ${createAppointmentModalEventMessage}`,
+            closeCreateAppointmentModal
         );
 
         return () => {
             eventEmitter.removeListener(
-                `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`,
+                `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`,
                 switchLoginModal
             );
             eventEmitter.removeListener(
-                `${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`,
+                `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`,
                 switchRegisterModal
+            );
+            eventEmitter.removeListener(
+                `${EventType.SUBMIT_DIALOG} ${createAppointmentModalEventMessage}`,
+                closeCreateAppointmentModal
             );
         };
     }, [
@@ -82,55 +98,90 @@ const Header: FunctionComponent = () => {
         isRegisterModalOpen,
         setIsRegisterModalOpen,
         accessToken,
+        isCreateAppointmentModalOpen,
     ]);
 
-    const handleLoginButton = () => {
+    const handleLogin = () => {
         accessToken ? AuthorizationService.logout() : setIsLoginModalOpen(true);
     };
 
+    const handleCreateAppointment = () => {
+        setIsCreateAppointmentModalOpen(true);
+    };
+
     return (
-        <AppBar position='static'>
-            <Toolbar>
-                <IconButton
-                    size='large'
-                    edge='start'
-                    color='inherit'
-                    aria-label='menu'
-                    sx={{ mr: 2 }}
-                >
-                    <MenuIcon />
-                </IconButton>
-
-                <Button onClick={() => navigate('/')} color='inherit'>
-                    Innowise Clinic
-                </Button>
-
-                {accessToken && (
-                    <Button
-                        onClick={() => navigate('/profile')}
+        <>
+            <AppBar position='static'>
+                <Toolbar>
+                    <IconButton
+                        size='large'
+                        edge='start'
                         color='inherit'
+                        aria-label='menu'
+                        sx={{ mr: 2 }}
                     >
-                        Profile
-                    </Button>
-                )}
+                        <MenuIcon />
+                    </IconButton>
 
-                <Button onClick={() => handleLoginButton()} color='inherit'>
-                    {loginMessage}
-                </Button>
+                    <Button onClick={() => navigate('/')} color='inherit'>
+                        Innowise Clinic
+                    </Button>
+
+                    {accessToken && (
+                        <Button
+                            onClick={() => navigate('/profile')}
+                            color='inherit'
+                        >
+                            Profile
+                        </Button>
+                    )}
+
+                    {accessToken && (
+                        <Button
+                            onClick={handleCreateAppointment}
+                            color='inherit'
+                        >
+                            Create Appointment
+                        </Button>
+                    )}
+
+                    <Button onClick={() => handleLogin()} color='inherit'>
+                        {loginMessage}
+                    </Button>
+                </Toolbar>
+            </AppBar>
+
+            {isLoginModalOpen && (
                 <CustomizedModal
                     isOpen={isLoginModalOpen}
                     name={LoginMessage.LOGIN}
                 >
                     <Login />
                 </CustomizedModal>
+            )}
+
+            {isRegisterModalOpen && (
                 <CustomizedModal
                     isOpen={isRegisterModalOpen}
                     name={LoginMessage.REGISTER}
                 >
                     <Register />
                 </CustomizedModal>
-            </Toolbar>
-        </AppBar>
+            )}
+
+            {isCreateAppointmentModalOpen && (
+                <CustomizedModal
+                    isOpen={isCreateAppointmentModalOpen}
+                    name={createAppointmentModalEventMessage}
+                >
+                    <ProtectedRoute>
+                        <CreateAppointment
+                            modalName={createAppointmentModalEventMessage}
+                        />
+                    </ProtectedRoute>
+                </CustomizedModal>
+            )}
+        </>
     );
 };
 

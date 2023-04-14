@@ -1,4 +1,4 @@
-import { FunctionComponent, useState } from 'react';
+import { FunctionComponent } from 'react';
 
 const Home: FunctionComponent = () => {
     return <div>Hello it's home page!</div>;

@@ -35,7 +35,6 @@ axiosInstance.interceptors.response.use(
                 break;
             }
             case 403: {
-                window.location.href = '/';
                 eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
                     message: 'You are not allowed to perform this action',
                 } as PopupData);

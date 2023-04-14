@@ -46,7 +46,7 @@ const Login: FunctionComponent = () => {
         try {
             await AuthorizationService.signIn(data);
             eventEmitter.emit(
-                `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`
+                `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`
             );
         } catch (error) {
             if (error instanceof AxiosError && error.response?.status === 400) {
@@ -68,7 +68,9 @@ const Login: FunctionComponent = () => {
     };
 
     const opedRegisterModel = () => {
-        eventEmitter.emit(`${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`);
+        eventEmitter.emit(
+            `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`
+        );
     };
 
     return (

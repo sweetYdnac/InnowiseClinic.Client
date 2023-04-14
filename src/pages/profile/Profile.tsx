@@ -57,9 +57,11 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
         mode: 'onBlur',
         resolver: yupResolver(validationSchema),
         defaultValues: async () => {
-            let values = (await PatientsService.getById(
+            let { isActive, ...rest } = await PatientsService.getById(
                 AuthorizationService.getAccountId()
-            )) as IUpdateProfileForm;
+            );
+
+            let values = rest as IUpdateProfileForm;
 
             if (values.photoId) {
                 let photo = await DocumentsService.getById(values.photoId);
@@ -189,7 +191,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                         <Textfield
                             workMode={mode}
                             displayName='First Name'
-                            isTouched={touchedFields.firstName}
+                            isTouched={Object.keys(touchedFields).length !== 0}
                             errors={errors.firstName?.message}
                             register={register('firstName')}
                         />
@@ -197,7 +199,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                         <Textfield
                             workMode={mode}
                             displayName='Last Name'
-                            isTouched={touchedFields.lastName}
+                            isTouched={Object.keys(touchedFields).length !== 0}
                             errors={errors.lastName?.message}
                             register={register('lastName')}
                         />
@@ -205,16 +207,16 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                         <Textfield
                             workMode={mode}
                             displayName='Middle Name'
-                            isTouched={touchedFields.middleName}
+                            isTouched={Object.keys(touchedFields).length !== 0}
                             errors={errors.middleName?.message}
                             register={register('middleName')}
                         />
 
                         <Datepicker
-                            workMode={mode}
+                            readOnly={mode === 'view'}
                             id={register('dateOfBirth').name}
                             displayName='Date of Birth'
-                            isTouched={!!touchedFields.dateOfBirth}
+                            isTouched={Object.keys(touchedFields).length !== 0}
                             errors={errors.dateOfBirth?.message}
                             control={control}
                         />
@@ -222,7 +224,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                         <NumericTextfield
                             workMode={mode}
                             displayName='Phone Number'
-                            isTouched={touchedFields.phoneNumber}
+                            isTouched={Object.keys(touchedFields).length !== 0}
                             errors={errors.phoneNumber?.message}
                             register={register('phoneNumber')}
                         />
@@ -264,10 +266,11 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                                             0) > 0 ||
                                         (errors.phoneNumber?.message?.length ??
                                             0) > 0 ||
-                                        !touchedFields.firstName ||
-                                        !touchedFields.lastName ||
-                                        !touchedFields.dateOfBirth ||
-                                        !touchedFields.phoneNumber
+                                        (!touchedFields.firstName &&
+                                            !touchedFields.lastName &&
+                                            !touchedFields.middleName &&
+                                            !touchedFields.dateOfBirth &&
+                                            !touchedFields.phoneNumber)
                                     }
                                 >
                                     Save changes

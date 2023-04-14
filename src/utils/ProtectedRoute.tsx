@@ -22,7 +22,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
             if (!refreshToken) {
                 navigate('/');
                 eventEmitter.emit(
-                    `${EventType.SWITCH_MODAL} ${LoginMessage.LOGIN}`
+                    `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`
                 );
             } else {
                 await AuthorizationService.refresh().then(() => {

@@ -32,9 +32,7 @@ const validationSchema = yup.object().shape({
         .oneOf([yup.ref('password')], 'Password confirmation does not match'),
 });
 
-interface RegisterProps {}
-
-const Register: FunctionComponent<RegisterProps> = () => {
+const Register: FunctionComponent = () => {
     const {
         register,
         handleSubmit,
@@ -53,7 +51,7 @@ const Register: FunctionComponent<RegisterProps> = () => {
         try {
             await AuthorizationService.signUp(data);
             eventEmitter.emit(
-                `${EventType.SWITCH_MODAL} ${LoginMessage.REGISTER}`,
+                `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`,
                 {
                     loginState: false,
                 }
