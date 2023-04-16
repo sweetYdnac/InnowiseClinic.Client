@@ -1,19 +1,19 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { LocalizationProvider, StaticTimePicker } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { FunctionComponent, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { EventType } from '../../events/eventTypes';
 import { eventEmitter } from '../../events/events';
+import AppointmentsService from '../../services/AppointmentsService';
 import DoctorsService from '../../services/DoctorsService';
 import OfficesService from '../../services/OfficesService';
 import ServicesService from '../../services/ServicesService';
 import SpecializationsService from '../../services/SpecializationsService';
 import ITimeSlot from '../../types/appointment/ITimeSlot';
 import ICreateAppointmentForm from '../../types/appointment/forms/ICreateAppointmentForm';
-import IComboBoxItem from '../../types/common/IComboBoxItem';
+import IGetTimeSlotsRequest from '../../types/appointment/requests/IGetTimeSlotsRequest';
+import IAutoCompleteItem from '../../types/common/IAutoCompleteItem';
 import IGetPagedDoctorsRequest from '../../types/doctors_api/requests/IGetPagedDoctorsRequest';
 import IDoctorInformationResponse from '../../types/doctors_api/responses/IDoctorInformationResponse';
 import IGetPagedOfficesRequest from '../../types/offices_api/requests/IGetPagedOfficesRequest';
@@ -22,45 +22,33 @@ import IGetPagedServicesRequest from '../../types/services_api/requests/service/
 import IGetPagedSpecializationsRequest from '../../types/services_api/requests/specialization/IGetPagedSpecializationsRequest';
 import IServiceInformationResponse from '../../types/services_api/responses/service/IServiceInformationResponse';
 import ISpecializationResponse from '../../types/services_api/responses/specialization/ISpecializationResponse';
-import Combobox from '../Combo_box';
+import AutoComplete from '../AutoComplete';
 import CustomDialog from '../CustomDialog';
 import Datepicker from '../Date_Picker';
-import TimeSlots from '../TimeSlots';
+import TimePicker from '../TimePicker';
 
 const validationSchema = yup.object().shape({
-    office: yup
-        .mixed<IComboBoxItem<IOfficeInformationResponse>>()
-        .required('Please, choose the office'),
-    doctor: yup
-        .mixed<IComboBoxItem<IDoctorInformationResponse>>()
-        .required('Please, choose the doctor'),
-    specialization: yup
-        .mixed<IComboBoxItem<ISpecializationResponse>>()
-        .required('Please, choose the specialization'),
-    service: yup
-        .mixed<IComboBoxItem<IServiceInformationResponse>>()
-        .required('Please, choose the service'),
-    date: yup
-        .date()
-        .required('Please, enter a valid date')
-        .typeError('Please, enter a valid date'),
-
-    time: yup
-        .date()
-        .required('Please, enter a valid timeslot')
-        .typeError('Please, enter a valid timeslot'),
+    office: yup.mixed<IAutoCompleteItem<IOfficeInformationResponse>>().required('Please, choose the office'),
+    doctor: yup.mixed<IAutoCompleteItem<IDoctorInformationResponse>>().required('Please, choose the doctor'),
+    specialization: yup.mixed<IAutoCompleteItem<ISpecializationResponse>>().required('Please, choose the specialization'),
+    service: yup.mixed<IAutoCompleteItem<IServiceInformationResponse>>().required('Please, choose the service'),
+    date: yup.date().required('Please, enter a valid date').typeError('Please, enter a valid date'),
+    time: yup.mixed<ITimeSlot>().required('Please, enter a valid timeslot'),
 });
 
 interface CreateAppointmentProps {
     modalName: string;
 }
 
-const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({
-    modalName,
-}: CreateAppointmentProps) => {
-    const [doctorsId, setDoctorsId] = useState<string[]>([]);
-    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-    const [availableDoctorsId, setAvailableDoctorsId] = useState<string[]>([]);
+const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalName }: CreateAppointmentProps) => {
+    const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+    const [options, setOptions] = useState({
+        offices: [] as IAutoCompleteItem<IOfficeInformationResponse>[],
+        specializations: [] as IAutoCompleteItem<ISpecializationResponse>[],
+        doctors: [] as IAutoCompleteItem<IDoctorInformationResponse>[],
+        services: [] as IAutoCompleteItem<IServiceInformationResponse>[],
+    });
+    const [timeSlots, setTimeSlots] = useState<ITimeSlot[]>([]);
 
     const {
         register,
@@ -86,234 +74,172 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({
     });
 
     useEffect(() => {
-        if (
-            doctorsId.length === 0 ||
-            getValues('service') === null ||
-            !getValues('date').isValid()
-        ) {
-            setAvailableDoctorsId([]);
-        }
-    }, [doctorsId.length, getValues]);
+        const openCancelDialog = () => setIsCancelDialogOpen(true);
+        const closeCancelDialog = () => setIsCancelDialogOpen(false);
 
-    useEffect(() => {
-        const handleCancelModal = () => {
-            setIsCancelModalOpen(true);
+        const setDoctorsFromTimeSlot = (data: ITimeSlot) =>
+            setOptions({
+                ...options,
+                doctors: options.doctors.filter((combobox) => data.doctorsId.some((id) => id === combobox.item.id)),
+            });
+
+        const getOffices = async () => {
+            let data = {
+                currentPage: 1,
+                pageSize: 50,
+            } as IGetPagedOfficesRequest;
+
+            let offices = (await OfficesService.getPaged(data)).items;
+
+            setOptions({
+                ...options,
+                offices: offices.map((item) => {
+                    return {
+                        label: item.address,
+                        item: item,
+                    } as IAutoCompleteItem<IOfficeInformationResponse>;
+                }),
+            });
         };
 
-        const handleDeclineDialog = () => {
-            setIsCancelModalOpen(false);
+        const getSpecializations = async (value = '') => {
+            let data = {
+                currentPage: 1,
+                pageSize: 50,
+                isActive: true,
+                title: value,
+            } as IGetPagedSpecializationsRequest;
+
+            let specializations = (await SpecializationsService.getPaged(data)).items;
+
+            setOptions({
+                ...options,
+                specializations: specializations.map((item) => {
+                    return {
+                        label: item.title,
+                        item: item,
+                    } as IAutoCompleteItem<ISpecializationResponse>;
+                }),
+            });
         };
 
-        eventEmitter.addListener(
-            `${EventType.CLICK_CLOSE_MODAL} ${modalName}`,
-            handleCancelModal
-        );
-        eventEmitter.addListener(
-            `${EventType.DECLINE_DIALOG} ${modalName}`,
-            handleDeclineDialog
-        );
-        eventEmitter.addListener(
-            `${EventType.ENTER_TIMESLOT}`,
-            (data: ITimeSlot) => {
-                setAvailableDoctorsId(data.doctorsId);
+        const getDoctors = async (value = '') => {
+            let data = {
+                currentPage: 1,
+                pageSize: 50,
+                onlyAtWork: true,
+                officeId: getValues('office')?.item.id ?? '',
+                specializationId: getValues('specialization')?.item.id ?? '',
+                fullName: value,
+            } as IGetPagedDoctorsRequest;
+
+            let doctors = (await DoctorsService.getPaged(data)).items;
+
+            return doctors.map((item) => {
+                return {
+                    label: item.fullName,
+                    item: item,
+                } as IAutoCompleteItem<IDoctorInformationResponse>;
+            });
+        };
+
+        const onDoctorChange = async () => {
+            let doctor = getValues('doctor')?.item;
+
+            if (doctor?.specializationId) {
+                let specialization = await SpecializationsService.getById(doctor?.specializationId);
+
+                setValue('specialization', {
+                    label: specialization.title,
+                    item: specialization,
+                } as IAutoCompleteItem<ISpecializationResponse>);
             }
-        );
+        };
+
+        const getServices = async (value = '') => {
+            let data = {
+                currentPage: 1,
+                pageSize: 50,
+                isActive: true,
+                specializationId: getValues('specialization')?.item.id ?? '',
+                title: value,
+            } as IGetPagedServicesRequest;
+
+            let services = (await ServicesService.getPaged(data)).items;
+
+            setOptions({
+                ...options,
+                services: services.map((item) => {
+                    return {
+                        label: item.title,
+                        item: item,
+                    } as IAutoCompleteItem<IServiceInformationResponse>;
+                }),
+            });
+        };
+
+        const onServiceChange = async () => {
+            let service = getValues('service')?.item;
+
+            if (service?.specializationId && getValues('specialization') === null) {
+                let specialization = await SpecializationsService.getById(service?.specializationId);
+
+                setValue('specialization', {
+                    label: specialization.title,
+                    item: specialization,
+                } as IAutoCompleteItem<ISpecializationResponse>);
+            }
+        };
+
+        eventEmitter.addListener(`${EventType.CLICK_CLOSE_MODAL} ${modalName}`, openCancelDialog);
+        eventEmitter.addListener(`${EventType.DECLINE_DIALOG} ${modalName}`, closeCancelDialog);
+        eventEmitter.addListener(`${EventType.ENTER_TIMESLOT}`, setDoctorsFromTimeSlot);
+
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('office').name}`, getOffices);
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specialization').name}`, getSpecializations);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specialization').name}`, getSpecializations);
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('doctor').name}`, getDoctors);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('doctor').name}`, getDoctors);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('doctor').name}`, onDoctorChange);
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('service').name}`, getServices);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('service').name}`, getServices);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('service').name}`, onServiceChange);
 
         return () => {
-            eventEmitter.removeListener(
-                `${EventType.CLICK_CLOSE_MODAL} ${modalName}`,
-                handleCancelModal
-            );
-            eventEmitter.removeListener(
-                `${EventType.DECLINE_DIALOG} ${modalName}`,
-                handleDeclineDialog
-            );
-            eventEmitter.removeListener(
-                `${EventType.ENTER_TIMESLOT}`,
-                (data: ITimeSlot) => {
-                    setAvailableDoctorsId(data.doctorsId);
-                }
-            );
+            eventEmitter.removeListener(`${EventType.CLICK_CLOSE_MODAL} ${modalName}`, openCancelDialog);
+            eventEmitter.removeListener(`${EventType.DECLINE_DIALOG} ${modalName}`, closeCancelDialog);
+            eventEmitter.removeListener(`${EventType.ENTER_TIMESLOT}`, setDoctorsFromTimeSlot);
+
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('office').name}`, getOffices);
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specialization').name}`, getSpecializations);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specialization').name}`, getSpecializations);
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('doctor').name}`, getDoctors);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('doctor').name}`, getDoctors);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('doctor').name}`, onDoctorChange);
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('service').name}`, getServices);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('service').name}`, getServices);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('service').name}`, onServiceChange);
         };
-    }, [modalName]);
+    }, [getValues, modalName, options, register, setValue]);
 
-    const getOffices = async () => {
-        let data = {
-            currentPage: 1,
-            pageSize: 50,
-        } as IGetPagedOfficesRequest;
+    useEffect(() => {
+        if (options.doctors.length > 0 && getValues('service') !== null && getValues('date').isValid()) {
+            const request = async () => {
+                let data = {
+                    date: getValues('date').format('YYYY-MM-DD'),
+                    doctors: options.doctors.map((combobox) => combobox.item.id),
+                    duration: getValues('service')?.item.duration ?? 30,
+                    startTime: '08:00',
+                    endTime: '18:00',
+                } as IGetTimeSlotsRequest;
 
-        let offices = (await OfficesService.getPaged(data)).items;
+                let response = await AppointmentsService.getTimeSlots(data);
+                setTimeSlots(response.timeSlots);
+            };
 
-        return offices.map((item) => {
-            return {
-                label: item.address,
-                value: item.id,
-                item: item,
-            } as IComboBoxItem<IOfficeInformationResponse>;
-        });
-    };
-
-    const getSpecializations = async () => {
-        let data = {
-            currentPage: 1,
-            pageSize: 50,
-            isActive: true,
-        } as IGetPagedSpecializationsRequest;
-
-        return await fetchSpecializations(data);
-    };
-
-    const getSpecializationOnInputChange = async (
-        e: React.SyntheticEvent<Element, Event>,
-        value: string
-    ) => {
-        let data = {
-            currentPage: 1,
-            pageSize: 50,
-            title: value,
-            isActive: true,
-        } as IGetPagedSpecializationsRequest;
-
-        return await fetchSpecializations(data);
-    };
-
-    const fetchSpecializations = async (
-        data: IGetPagedSpecializationsRequest
-    ) => {
-        let specializations = (await SpecializationsService.getPaged(data))
-            .items;
-
-        return specializations.map((item) => {
-            return {
-                label: item.title,
-                value: item.id,
-                item: item,
-            } as IComboBoxItem<ISpecializationResponse>;
-        });
-    };
-
-    const getDoctors = async () => {
-        let data = {
-            currentPage: 1,
-            pageSize: 50,
-            onlyAtWork: true,
-            officeId: getValues('office')?.value ?? '',
-            specializationId: getValues('specialization')?.value ?? '',
-        } as IGetPagedDoctorsRequest;
-
-        return await fetchDoctors(data);
-    };
-
-    const getDoctorsOnInputChange = async (
-        e: React.SyntheticEvent<Element, Event>,
-        value: string
-    ) => {
-        let data = {
-            currentPage: 1,
-            pageSize: 50,
-            onlyAtWork: true,
-            officeId: getValues('office')?.value ?? '',
-            specializationId: getValues('specialization')?.value ?? '',
-            fullName: value,
-        } as IGetPagedDoctorsRequest;
-
-        return await fetchDoctors(data);
-    };
-
-    const fetchDoctors = async (data: IGetPagedDoctorsRequest) => {
-        let doctors = (await DoctorsService.getPaged(data)).items;
-
-        if (availableDoctorsId.length > 0) {
-            doctors = doctors.filter((item) =>
-                availableDoctorsId.find((id) => id === item.id)
-            );
+            request();
         }
-
-        setDoctorsId(
-            doctors.map((item) => {
-                return item.id;
-            })
-        );
-
-        return doctors.map((item) => {
-            return {
-                label: item.fullName,
-                value: item.id,
-                item: item,
-            } as IComboBoxItem<IDoctorInformationResponse>;
-        });
-    };
-
-    const onDoctorChange = async () => {
-        let doctor = getValues('doctor')?.item;
-
-        if (doctor?.specializationId) {
-            let specialization = await SpecializationsService.getById(
-                doctor?.specializationId
-            );
-
-            setValue('specialization', {
-                label: specialization.title,
-                value: specialization.id,
-                item: specialization,
-            } as IComboBoxItem<ISpecializationResponse>);
-        }
-    };
-
-    const getServices = async () => {
-        let data = {
-            currentPage: 1,
-            pageSize: 50,
-            isActive: true,
-            specializationId: getValues('specialization')?.value ?? '',
-        } as IGetPagedServicesRequest;
-
-        return await fetchServices(data);
-    };
-
-    const getServicesOnInputChange = async (
-        e: React.SyntheticEvent<Element, Event>,
-        value: string
-    ) => {
-        let data = {
-            currentPage: 1,
-            pageSize: 50,
-            isActive: true,
-            specializationId: getValues('specialization')?.value ?? '',
-            title: value,
-        } as IGetPagedServicesRequest;
-
-        return await fetchServices(data);
-    };
-
-    const fetchServices = async (data: IGetPagedServicesRequest) => {
-        let services = (await ServicesService.getPaged(data)).items;
-
-        return services.map((item) => {
-            return {
-                label: item.title,
-                value: item.id,
-                item: item,
-            } as IComboBoxItem<IServiceInformationResponse>;
-        });
-    };
-
-    const onServiceChange = async () => {
-        let service = getValues('service')?.item;
-
-        if (service?.specializationId && getValues('specialization') === null) {
-            let specialization = await SpecializationsService.getById(
-                service?.specializationId
-            );
-
-            setValue('specialization', {
-                label: specialization.title,
-                value: specialization.id,
-                item: specialization,
-            } as IComboBoxItem<ISpecializationResponse>);
-        }
-    };
+    }, [options.doctors, getValues]);
 
     return (
         <>
@@ -324,57 +250,48 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({
                     alignItems: 'center',
                 }}
             >
-                <Combobox
+                <AutoComplete
                     id={register('office').name}
                     displayName='Office'
                     isTouched={!!touchedFields.office}
                     errors={errors.office?.message}
                     control={control}
-                    getData={getOffices}
+                    options={options.offices}
                 />
 
-                <Combobox
+                <AutoComplete
                     disabled={getValues('office') === null}
                     id={register('specialization').name}
                     displayName='Specialization'
                     isTouched={!!touchedFields.specialization}
                     errors={errors.specialization?.message}
                     control={control}
-                    getData={getSpecializations}
-                    getDataOnInputChange={getSpecializationOnInputChange}
+                    options={options.specializations}
                 />
 
-                <Combobox
+                <AutoComplete
                     disabled={getValues('office') === null}
                     id={register('doctor').name}
                     displayName='Doctor'
                     isTouched={!!touchedFields.doctor}
                     errors={errors.doctor?.message}
                     control={control}
-                    getData={getDoctors}
-                    getDataOnInputChange={getDoctorsOnInputChange}
-                    onValueChange={onDoctorChange}
+                    options={options.doctors}
                 />
 
-                <Combobox
+                <AutoComplete
                     disabled={getValues('office') === null}
                     id={register('service').name}
                     displayName='Service'
                     isTouched={!!touchedFields.service}
                     errors={errors.service?.message}
                     control={control}
-                    getData={getServices}
-                    getDataOnInputChange={getServicesOnInputChange}
-                    onValueChange={onServiceChange}
+                    options={options.services}
                 />
 
                 <Datepicker
-                    readOnly={
-                        doctorsId.length === 0 || getValues('service') === null
-                    }
-                    disabled={
-                        doctorsId.length === 0 || getValues('service') === null
-                    }
+                    readOnly={options.doctors.length === 0 || getValues('service') === null}
+                    disabled={options.doctors.length === 0 || getValues('service') === null}
                     id={register('date').name}
                     displayName='Date'
                     isTouched={!!touchedFields.date}
@@ -386,30 +303,24 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({
                     openTo={'day'}
                 />
 
-                <TimeSlots
-                    isActive={
-                        doctorsId.length > 0 &&
-                        getValues('service') !== null &&
-                        getValues('date').isValid()
-                    }
-                    date={getValues('date')}
-                    doctors={doctorsId}
-                    duration={getValues('service')?.item.duration ?? 30}
+                <TimePicker
+                    readOnly={false}
+                    disabled={false}
+                    id={register('time').name}
+                    displayName='Time slot'
+                    isTouched={!!touchedFields.time}
+                    errors={errors.time?.message}
+                    control={control}
                 />
-
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <StaticTimePicker minutesStep={10} />
-                </LocalizationProvider>
+                {/* <TimeSlots timeSlots={timeSlots} /> */}
             </div>
 
-            {isCancelModalOpen && (
-                <CustomDialog
-                    isOpen={isCancelModalOpen}
-                    name={modalName}
-                    title='Discard changes?'
-                    content='Do you really want to exit? Your appointment will not be saved.'
-                />
-            )}
+            <CustomDialog
+                isOpen={isCancelDialogOpen}
+                name={modalName}
+                title='Discard changes?'
+                content='Do you really want to exit? Your appointment will not be saved.'
+            />
         </>
     );
 };

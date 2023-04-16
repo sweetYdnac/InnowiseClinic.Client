@@ -17,13 +17,8 @@ const TimeSlot: FunctionComponent<TimeSlotProps> = ({ data, isSelected }) => {
     };
 
     return (
-        <Button
-            onClick={handleClick}
-            variant='contained'
-            color={isSelected ? 'info' : 'secondary'}
-            sx={{ borderRadius: 28 }}
-        >
-            {data.time}
+        <Button onClick={handleClick} variant='contained' color={isSelected ? 'info' : 'secondary'} sx={{ borderRadius: 28 }}>
+            {data.time.toDate().toString()}
         </Button>
     );
 };

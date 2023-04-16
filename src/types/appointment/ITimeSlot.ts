@@ -1,4 +1,6 @@
+import dayjs from 'dayjs';
+
 export default interface ITimeSlot {
-    time: string;
+    time: dayjs.Dayjs;
     doctorsId: string[];
 }

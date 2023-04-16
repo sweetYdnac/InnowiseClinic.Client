@@ -4,4 +4,7 @@ export enum EventType {
     DECLINE_DIALOG = 'declineDialog',
     SUBMIT_DIALOG = 'submitDialog',
     ENTER_TIMESLOT = 'enterTimeslot',
+    OPEN_AUTOCOMPLETE = 'openAutocomplete',
+    AUTOCOMPLETE_INPUT_CHANGE = 'autocompleteInputChange',
+    AUTOCOMPLETE_VALUE_CHANGE = 'autocompleteValueChange',
 }
