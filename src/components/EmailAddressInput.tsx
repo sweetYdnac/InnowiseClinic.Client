@@ -1,8 +1,8 @@
+import { AccountCircle } from '@mui/icons-material';
+import FormControl from '@mui/material/FormControl';
+import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
 import { FunctionComponent } from 'react';
-import { AccountCircle } from '@mui/icons-material';
-import InputAdornment from '@mui/material/InputAdornment';
-import FormControl from '@mui/material/FormControl';
 import { UseFormRegisterReturn } from 'react-hook-form';
 
 interface EmailAddressInputProps {
@@ -19,19 +19,11 @@ const EmailAddressInput: FunctionComponent<EmailAddressInputProps> = ({
     register,
 }: EmailAddressInputProps) => {
     return (
-        <FormControl
-            sx={{ m: 1, width: '75%' }}
-            variant='standard'
-            error={(errors?.length ?? 0) > 0 && isTouched}
-        >
+        <FormControl sx={{ m: 1, width: '75%' }} variant='standard' error={(errors?.length ?? 0) > 0 && isTouched}>
             <TextField
                 {...register}
                 required
-                label={
-                    (errors?.length ?? 0) > 0 && isTouched
-                        ? 'Error'
-                        : displayName
-                }
+                label={(errors?.length ?? 0) > 0 && isTouched ? 'Error' : displayName}
                 placeholder='example@gmail.com'
                 variant='standard'
                 error={(errors?.length ?? 0) > 0 && isTouched}

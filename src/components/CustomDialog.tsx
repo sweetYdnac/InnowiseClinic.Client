@@ -1,14 +1,7 @@
-import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogContentText,
-    DialogActions,
-    Button,
-} from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { FunctionComponent } from 'react';
-import { eventEmitter } from '../events/events';
 import { EventType } from '../events/eventTypes';
+import { eventEmitter } from '../events/events';
 
 interface CustomDialogProps {
     isOpen: boolean;

@@ -26,7 +26,9 @@ const TimeSlots: FunctionComponent<TimeSlotsProps> = ({ timeSlots }) => {
     return (
         <>
             {(timeSlots?.length ?? 0) > 0 &&
-                timeSlots?.map((timeSlot) => <TimeSlot key={timeSlot.time} data={timeSlot} isSelected={timeSlot === selectedTimeSlot} />)}
+                timeSlots?.map((timeSlot) => (
+                    <TimeSlot key={timeSlot.time.toString()} data={timeSlot} isSelected={timeSlot === selectedTimeSlot} />
+                ))}
         </>
     );
 };

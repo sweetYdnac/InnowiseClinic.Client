@@ -29,14 +29,8 @@ const validationSchema = yup.object().shape({
     firstName: yup.string().required('Please, enter a first name'),
     lastName: yup.string().required('Please, enter a first name'),
     middleName: yup.string().notRequired(),
-    dateOfBirth: yup
-        .date()
-        .required('Please, select the date')
-        .typeError('Please, enter a valid date'),
-    phoneNumber: yup
-        .string()
-        .required('Please, enter a phone number')
-        .matches(/^\d+$/, `You've entered an invalid phone number`),
+    dateOfBirth: yup.date().required('Please, select the date').typeError('Please, enter a valid date'),
+    phoneNumber: yup.string().required('Please, enter a phone number').matches(/^\d+$/, `You've entered an invalid phone number`),
     photoId: yup.string().notRequired().uuid('Entered accound id not a uuid'),
     photo: yup.string().notRequired(),
 });
@@ -57,9 +51,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
         mode: 'onBlur',
         resolver: yupResolver(validationSchema),
         defaultValues: async () => {
-            let { isActive, ...rest } = await PatientsService.getById(
-                AuthorizationService.getAccountId()
-            );
+            let { isActive, ...rest } = await PatientsService.getById(AuthorizationService.getAccountId());
 
             let values = rest as IUpdateProfileForm;
 
@@ -90,10 +82,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                 dateOfBirth: dayjs(dateOfBirth).format('YYYY-MM-DD'),
             };
 
-            await PatientsService.updatePatient(
-                AuthorizationService.getAccountId(),
-                request
-            );
+            await PatientsService.updatePatient(AuthorizationService.getAccountId(), request);
 
             if (getValues('photo') !== defaultValues?.photo) {
                 await DocumentsService.update(photoId, photo);
@@ -107,28 +96,16 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
             if (error instanceof AxiosError && error.response?.status === 400) {
                 console.log(error.response.data.errors);
                 setError('firstName', {
-                    message:
-                        error.response.data.errors?.FirstName?.[0] ??
-                        error.response.data.Message ??
-                        '',
+                    message: error.response.data.errors?.FirstName?.[0] ?? error.response.data.Message ?? '',
                 });
                 setError('lastName', {
-                    message:
-                        error.response.data.errors?.LastName?.[0] ??
-                        error.response.data.Message ??
-                        '',
+                    message: error.response.data.errors?.LastName?.[0] ?? error.response.data.Message ?? '',
                 });
                 setError('dateOfBirth', {
-                    message:
-                        error.response.data.errors?.dateOfBirth?.[0] ??
-                        error.response.data.Message ??
-                        '',
+                    message: error.response.data.errors?.dateOfBirth?.[0] ?? error.response.data.Message ?? '',
                 });
                 setError('phoneNumber', {
-                    message:
-                        error.response.data.errors?.PhoneNumber?.[0] ??
-                        error.response.data.Message ??
-                        '',
+                    message: error.response.data.errors?.PhoneNumber?.[0] ?? error.response.data.Message ?? '',
                 });
             }
         }
@@ -141,24 +118,12 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
             setIsCancelModalOpen(false);
         };
 
-        eventEmitter.addListener(
-            `${EventType.DECLINE_DIALOG} ${closeDialogEventName}`,
-            handleDeclineDialog
-        );
-        eventEmitter.addListener(
-            `${EventType.SUBMIT_DIALOG} ${closeDialogEventName}`,
-            handleSubmitDialog
-        );
+        eventEmitter.addListener(`${EventType.DECLINE_DIALOG} ${closeDialogEventName}`, handleDeclineDialog);
+        eventEmitter.addListener(`${EventType.SUBMIT_DIALOG} ${closeDialogEventName}`, handleSubmitDialog);
 
         return () => {
-            eventEmitter.removeListener(
-                `${EventType.DECLINE_DIALOG} ${closeDialogEventName}`,
-                handleDeclineDialog
-            );
-            eventEmitter.removeListener(
-                `${EventType.SUBMIT_DIALOG} ${closeDialogEventName}`,
-                handleSubmitDialog
-            );
+            eventEmitter.removeListener(`${EventType.DECLINE_DIALOG} ${closeDialogEventName}`, handleDeclineDialog);
+            eventEmitter.removeListener(`${EventType.SUBMIT_DIALOG} ${closeDialogEventName}`, handleSubmitDialog);
         };
     }, [reset]);
 
@@ -166,9 +131,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
         <>
             {JSON.stringify(getValues()) !== JSON.stringify({}) && (
                 <>
-                    {mode === 'view' && (
-                        <Button onClick={enableEditMode}>Edit</Button>
-                    )}
+                    {mode === 'view' && <Button onClick={enableEditMode}>Edit</Button>}
                     <Box
                         onSubmit={handleSubmit(onSubmit)}
                         component={mode === 'view' ? 'div' : 'form'}
@@ -182,11 +145,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                         noValidate
                         autoComplete='off'
                     >
-                        <PhotoDownload
-                            workMode={mode}
-                            photo={getValues('photo')}
-                            register={register('photo')}
-                        />
+                        <PhotoDownload workMode={mode} photo={getValues('photo')} register={register('photo')} />
 
                         <Textfield
                             workMode={mode}
@@ -238,11 +197,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                                     justifyContent: 'space-evenly',
                                 }}
                             >
-                                <Button
-                                    variant='contained'
-                                    color='error'
-                                    onClick={() => setIsCancelModalOpen(true)}
-                                >
+                                <Button variant='contained' color='error' onClick={() => setIsCancelModalOpen(true)}>
                                     Cancel
                                 </Button>
 
@@ -258,14 +213,10 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                                     variant='contained'
                                     color='success'
                                     disabled={
-                                        (errors.firstName?.message?.length ??
-                                            0) > 0 ||
-                                        (errors.lastName?.message?.length ??
-                                            0) > 0 ||
-                                        (errors.dateOfBirth?.message?.length ??
-                                            0) > 0 ||
-                                        (errors.phoneNumber?.message?.length ??
-                                            0) > 0 ||
+                                        (errors.firstName?.message?.length ?? 0) > 0 ||
+                                        (errors.lastName?.message?.length ?? 0) > 0 ||
+                                        (errors.dateOfBirth?.message?.length ?? 0) > 0 ||
+                                        (errors.phoneNumber?.message?.length ?? 0) > 0 ||
                                         (!touchedFields.firstName &&
                                             !touchedFields.lastName &&
                                             !touchedFields.middleName &&

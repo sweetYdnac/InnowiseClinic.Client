@@ -1,19 +1,18 @@
+import MenuIcon from '@mui/icons-material/Menu';
 import AppBar from '@mui/material/AppBar';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
-import MenuIcon from '@mui/icons-material/Menu';
 import { FunctionComponent, useEffect, useState } from 'react';
-
-import CustomizedModal from './customizedModal/CustomizedModal';
-import Login from './forms/Login';
-import AuthorizationService from '../services/AuthorizationService';
 import { useNavigate } from 'react-router-dom';
-import { eventEmitter } from '../events/events';
 import { EventType } from '../events/eventTypes';
-import Register from './forms/Register';
+import { eventEmitter } from '../events/events';
+import AuthorizationService from '../services/AuthorizationService';
 import ProtectedRoute from '../utils/ProtectedRoute';
+import CustomizedModal from './customizedModal/CustomizedModal';
 import CreateAppointment from './forms/CreateAppointment';
+import Login from './forms/Login';
+import Register from './forms/Register';
 
 export enum LoginMessage {
     LOGIN = 'Login',
@@ -23,26 +22,17 @@ export enum LoginMessage {
 const createAppointmentModalEventMessage = 'createAppointment';
 
 const Header: FunctionComponent = () => {
-    const [accessToken, setAccessToken] = useState(
-        AuthorizationService.getAccessToken()
-    );
+    const [accessToken, setAccessToken] = useState(AuthorizationService.getAccessToken());
     const navigate = useNavigate();
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-    const [loginMessage, setLoginMessage] = useState<LoginMessage>(
-        accessToken ? LoginMessage.LOGOUT : LoginMessage.LOGIN
-    );
-    const [isCreateAppointmentModalOpen, setIsCreateAppointmentModalOpen] =
-        useState(false);
+    const [loginMessage, setLoginMessage] = useState<LoginMessage>(accessToken ? LoginMessage.LOGOUT : LoginMessage.LOGIN);
+    const [isCreateAppointmentModalOpen, setIsCreateAppointmentModalOpen] = useState(false);
 
     useEffect(() => {
         const handleStorageChange = () => {
             setAccessToken(AuthorizationService.getAccessToken());
-            setLoginMessage(
-                AuthorizationService.getAccessToken()
-                    ? LoginMessage.LOGOUT
-                    : LoginMessage.LOGIN
-            );
+            setLoginMessage(AuthorizationService.getAccessToken() ? LoginMessage.LOGOUT : LoginMessage.LOGIN);
         };
 
         window.addEventListener('storage', handleStorageChange);
@@ -65,41 +55,16 @@ const Header: FunctionComponent = () => {
             setIsCreateAppointmentModalOpen(false);
         };
 
-        eventEmitter.addListener(
-            `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`,
-            switchLoginModal
-        );
-        eventEmitter.addListener(
-            `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`,
-            switchRegisterModal
-        );
-        eventEmitter.addListener(
-            `${EventType.SUBMIT_DIALOG} ${createAppointmentModalEventMessage}`,
-            closeCreateAppointmentModal
-        );
+        eventEmitter.addListener(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`, switchLoginModal);
+        eventEmitter.addListener(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`, switchRegisterModal);
+        eventEmitter.addListener(`${EventType.SUBMIT_DIALOG} ${createAppointmentModalEventMessage}`, closeCreateAppointmentModal);
 
         return () => {
-            eventEmitter.removeListener(
-                `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`,
-                switchLoginModal
-            );
-            eventEmitter.removeListener(
-                `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`,
-                switchRegisterModal
-            );
-            eventEmitter.removeListener(
-                `${EventType.SUBMIT_DIALOG} ${createAppointmentModalEventMessage}`,
-                closeCreateAppointmentModal
-            );
+            eventEmitter.removeListener(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`, switchLoginModal);
+            eventEmitter.removeListener(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`, switchRegisterModal);
+            eventEmitter.removeListener(`${EventType.SUBMIT_DIALOG} ${createAppointmentModalEventMessage}`, closeCreateAppointmentModal);
         };
-    }, [
-        isLoginModalOpen,
-        setIsLoginModalOpen,
-        isRegisterModalOpen,
-        setIsRegisterModalOpen,
-        accessToken,
-        isCreateAppointmentModalOpen,
-    ]);
+    }, [isLoginModalOpen, setIsLoginModalOpen, isRegisterModalOpen, setIsRegisterModalOpen, accessToken, isCreateAppointmentModalOpen]);
 
     const handleLogin = () => {
         accessToken ? AuthorizationService.logout() : setIsLoginModalOpen(true);
@@ -113,13 +78,7 @@ const Header: FunctionComponent = () => {
         <>
             <AppBar position='static'>
                 <Toolbar>
-                    <IconButton
-                        size='large'
-                        edge='start'
-                        color='inherit'
-                        aria-label='menu'
-                        sx={{ mr: 2 }}
-                    >
+                    <IconButton size='large' edge='start' color='inherit' aria-label='menu' sx={{ mr: 2 }}>
                         <MenuIcon />
                     </IconButton>
 
@@ -128,19 +87,13 @@ const Header: FunctionComponent = () => {
                     </Button>
 
                     {accessToken && (
-                        <Button
-                            onClick={() => navigate('/profile')}
-                            color='inherit'
-                        >
+                        <Button onClick={() => navigate('/profile')} color='inherit'>
                             Profile
                         </Button>
                     )}
 
                     {accessToken && (
-                        <Button
-                            onClick={handleCreateAppointment}
-                            color='inherit'
-                        >
+                        <Button onClick={handleCreateAppointment} color='inherit'>
                             Create Appointment
                         </Button>
                     )}
@@ -152,32 +105,21 @@ const Header: FunctionComponent = () => {
             </AppBar>
 
             {isLoginModalOpen && (
-                <CustomizedModal
-                    isOpen={isLoginModalOpen}
-                    name={LoginMessage.LOGIN}
-                >
+                <CustomizedModal isOpen={isLoginModalOpen} name={LoginMessage.LOGIN}>
                     <Login />
                 </CustomizedModal>
             )}
 
             {isRegisterModalOpen && (
-                <CustomizedModal
-                    isOpen={isRegisterModalOpen}
-                    name={LoginMessage.REGISTER}
-                >
+                <CustomizedModal isOpen={isRegisterModalOpen} name={LoginMessage.REGISTER}>
                     <Register />
                 </CustomizedModal>
             )}
 
             {isCreateAppointmentModalOpen && (
-                <CustomizedModal
-                    isOpen={isCreateAppointmentModalOpen}
-                    name={createAppointmentModalEventMessage}
-                >
+                <CustomizedModal isOpen={isCreateAppointmentModalOpen} name={createAppointmentModalEventMessage}>
                     <ProtectedRoute>
-                        <CreateAppointment
-                            modalName={createAppointmentModalEventMessage}
-                        />
+                        <CreateAppointment modalName={createAppointmentModalEventMessage} />
                     </ProtectedRoute>
                 </CustomizedModal>
             )}

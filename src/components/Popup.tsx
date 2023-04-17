@@ -1,9 +1,8 @@
-import { FunctionComponent, useEffect, useState } from 'react';
-import Snackbar from '@mui/material/Snackbar';
 import Alert, { AlertColor } from '@mui/material/Alert';
-import React from 'react';
-import { eventEmitter } from '../events/events';
+import Snackbar from '@mui/material/Snackbar';
+import React, { FunctionComponent, useEffect, useState } from 'react';
 import { EventType } from '../events/eventTypes';
+import { eventEmitter } from '../events/events';
 
 export interface PopupData {
     color?: AlertColor;
@@ -17,24 +16,12 @@ const Popup: FunctionComponent = () => {
         message: 'Something went wrong',
     });
 
-    const handleClose = (
-        event?: React.SyntheticEvent | Event,
-        reason?: string
-    ) => {
+    const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
         if (reason === 'clickaway') {
             return;
         }
 
         setIsOpen(false);
-    };
-
-    const showPopup = (style: PopupData) => {
-        setData({
-            color: style.color ?? data.color,
-            message: style.message,
-        });
-
-        handleSnackbar(6000);
     };
 
     const handleSnackbar = (duration: number) => {
@@ -45,6 +32,15 @@ const Popup: FunctionComponent = () => {
     };
 
     useEffect(() => {
+        const showPopup = (style: PopupData) => {
+            setData({
+                color: style.color ?? data.color,
+                message: style.message,
+            });
+
+            handleSnackbar(6000);
+        };
+
         eventEmitter.addListener(`${EventType.SHOW_POPUP}`, showPopup);
 
         return () => {
@@ -54,12 +50,7 @@ const Popup: FunctionComponent = () => {
 
     return (
         <Snackbar open={isOpen} onClose={handleClose}>
-            <Alert
-                onClose={handleClose}
-                severity={data.color}
-                sx={{ width: '100%' }}
-                className='alert'
-            >
+            <Alert onClose={handleClose} severity={data.color} sx={{ width: '100%' }} className='alert'>
                 {data.message}
             </Alert>
         </Snackbar>

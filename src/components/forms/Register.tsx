@@ -1,25 +1,22 @@
-import { FunctionComponent } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import { AxiosError } from 'axios';
+import { FunctionComponent } from 'react';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { EventType } from '../../events/eventTypes';
+import { eventEmitter } from '../../events/events';
+import AuthorizationService from '../../services/AuthorizationService';
+import IRegisterRequest from '../../types/authorization/requests/IRegisterRequest';
 import EmailAddressInput from '../EmailAddressInput';
+import { LoginMessage } from '../Header';
 import PasswordInput from '../PasswordInput';
 import './styles/ModalForm.css';
-import * as yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm } from 'react-hook-form';
-import IRegisterRequest from '../../types/authorization/requests/IRegisterRequest';
-import AuthorizationService from '../../services/AuthorizationService';
-import { eventEmitter } from '../../events/events';
-import { EventType } from '../../events/eventTypes';
-import { AxiosError } from 'axios';
-import { LoginMessage } from '../Header';
 
 const validationSchema = yup.object().shape({
-    email: yup
-        .string()
-        .required('Please, enter the email')
-        .email(`You've entered an invalid email`),
+    email: yup.string().required('Please, enter the email').email(`You've entered an invalid email`),
 
     password: yup
         .string()
@@ -27,9 +24,7 @@ const validationSchema = yup.object().shape({
         .max(15, 'Password must be less than 15 characters')
         .required('Please, enter the password'),
 
-    passwordConfirmation: yup
-        .string()
-        .oneOf([yup.ref('password')], 'Password confirmation does not match'),
+    passwordConfirmation: yup.string().oneOf([yup.ref('password')], 'Password confirmation does not match'),
 });
 
 const Register: FunctionComponent = () => {
@@ -50,26 +45,17 @@ const Register: FunctionComponent = () => {
     const onSubmit = async (data: IRegisterRequest) => {
         try {
             await AuthorizationService.signUp(data);
-            eventEmitter.emit(
-                `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`,
-                {
-                    loginState: false,
-                }
-            );
+            eventEmitter.emit(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`, {
+                loginState: false,
+            });
         } catch (error) {
             if (error instanceof AxiosError && error.response?.status === 400) {
                 setError('email', {
-                    message:
-                        error.response.data.errors?.Email?.[0] ||
-                        error.response.data.Message ||
-                        '',
+                    message: error.response.data.errors?.Email?.[0] || error.response.data.Message || '',
                 });
 
                 setError('password', {
-                    message:
-                        error.response.data.errors?.Password?.[0] ||
-                        error.response.data.Message ||
-                        '',
+                    message: error.response.data.errors?.Password?.[0] || error.response.data.Message || '',
                 });
             }
         }
@@ -77,13 +63,7 @@ const Register: FunctionComponent = () => {
 
     return (
         <div className='form-wrapper'>
-            <Box
-                className='form-container'
-                onSubmit={handleSubmit(onSubmit)}
-                component='form'
-                noValidate
-                autoComplete='off'
-            >
+            <Box className='form-container' onSubmit={handleSubmit(onSubmit)} component='form' noValidate autoComplete='off'>
                 <Typography variant='h4' gutterBottom>
                     Register
                 </Typography>
@@ -116,8 +96,7 @@ const Register: FunctionComponent = () => {
                     disabled={
                         (errors.email?.message?.length ?? 0) > 0 ||
                         (errors.password?.message?.length ?? 0) > 0 ||
-                        (errors.passwordConfirmation?.message?.length ?? 0) >
-                            0 ||
+                        (errors.passwordConfirmation?.message?.length ?? 0) > 0 ||
                         !touchedFields.email ||
                         !touchedFields.password ||
                         !touchedFields.passwordConfirmation

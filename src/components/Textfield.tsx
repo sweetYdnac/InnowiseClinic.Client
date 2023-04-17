@@ -11,36 +11,16 @@ interface TextfieldProps {
     register: UseFormRegisterReturn<string>;
 }
 
-const Textfield: FunctionComponent<TextfieldProps> = ({
-    workMode,
-    displayName,
-    isTouched,
-    errors,
-    register,
-}: TextfieldProps) => {
+const Textfield: FunctionComponent<TextfieldProps> = ({ workMode, displayName, isTouched, errors, register }: TextfieldProps) => {
     return (
         <TextField
             sx={{ m: 1, width: '75%' }}
-            color={
-                workMode === 'edit' && (errors?.length ?? 0) > 0 && isTouched
-                    ? 'error'
-                    : 'success'
-            }
-            focused={
-                workMode === 'edit' && (errors?.length ?? 0) === 0 && isTouched
-            }
+            color={workMode === 'edit' && (errors?.length ?? 0) > 0 && isTouched ? 'error' : 'success'}
+            focused={workMode === 'edit' && (errors?.length ?? 0) === 0 && isTouched}
             {...register}
-            label={
-                workMode === 'view'
-                    ? displayName
-                    : (errors?.length ?? 0) > 0 && isTouched
-                    ? 'Error'
-                    : displayName
-            }
+            label={workMode === 'view' ? displayName : (errors?.length ?? 0) > 0 && isTouched ? 'Error' : displayName}
             variant='standard'
-            error={
-                workMode === 'edit' && (errors?.length ?? 0) > 0 && isTouched
-            }
+            error={workMode === 'edit' && (errors?.length ?? 0) > 0 && isTouched}
             helperText={workMode === 'edit' && isTouched ? errors : ''}
             InputProps={{
                 readOnly: workMode === 'view',

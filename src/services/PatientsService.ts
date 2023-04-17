@@ -1,13 +1,12 @@
-import https from '../utils/https-common';
-import ICreateProfileRequest from '../types/profile/requests/ICreateProfileRequest';
-import ICreatedResponse from '../types/authorization/responses/ICreatedResponse';
-import IProfileResponse from '../types/profile/response/IProfileResponse';
 import dayjs from 'dayjs';
+import ICreatedResponse from '../types/authorization/responses/ICreatedResponse';
+import ICreateProfileRequest from '../types/profile/requests/ICreateProfileRequest';
 import IUpdateProfileRequest from '../types/profile/requests/IUpdateProfileRequest';
+import IProfileResponse from '../types/profile/response/IProfileResponse';
+import https from '../utils/https-common';
 
 const getById = async (id: string) => {
-    const response = (await https.get<IProfileResponse>(`/patients/${id}`))
-        .data;
+    const response = (await https.get<IProfileResponse>(`/patients/${id}`)).data;
 
     return {
         ...response,

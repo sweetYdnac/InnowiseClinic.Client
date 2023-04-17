@@ -1,8 +1,4 @@
-import {
-    DatePicker,
-    DateView,
-    LocalizationProvider,
-} from '@mui/x-date-pickers';
+import { DatePicker, DateView, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { FunctionComponent } from 'react';
@@ -61,20 +57,11 @@ const Datepicker: FunctionComponent<DatepickerProps> = ({
                             slotProps={{
                                 textField: {
                                     sx: { m: 1, width: '75%' },
-                                    color:
-                                        !readOnly &&
-                                        (errors?.length ?? 0) > 0 &&
-                                        isTouched
-                                            ? 'error'
-                                            : 'success',
-                                    focused:
-                                        !readOnly &&
-                                        (errors?.length ?? 0) === 0 &&
-                                        isTouched,
+                                    color: !readOnly && (errors?.length ?? 0) > 0 && isTouched ? 'error' : 'success',
+                                    focused: !readOnly && (errors?.length ?? 0) === 0 && isTouched,
                                     variant: 'standard',
                                     helperText: isTouched ? errors : '',
-                                    error:
-                                        (errors?.length ?? 0) > 0 && isTouched,
+                                    error: (errors?.length ?? 0) > 0 && isTouched,
                                 },
                                 popper: {
                                     placement: 'auto',

@@ -5,8 +5,7 @@ import { getQueryString } from '../utils/functions';
 import https from '../utils/https-common';
 
 const getById = async (id: string) => {
-    return (await https.get<ISpecializationResponse>(`/specializations/${id}`))
-        .data;
+    return (await https.get<ISpecializationResponse>(`/specializations/${id}`)).data;
 };
 
 const getPaged = async (data: IGetPagedSpecializationsRequest) => {

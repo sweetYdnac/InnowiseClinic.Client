@@ -5,6 +5,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { FunctionComponent } from 'react';
 import { Control, Controller } from 'react-hook-form';
+import ITimeSlot from '../types/appointment/ITimeSlot';
 
 interface TimePickerProps {
     readOnly: boolean;
@@ -14,9 +15,10 @@ interface TimePickerProps {
     isTouched: boolean | undefined;
     errors: string | undefined;
     control: Control<any, any>;
+    timeSlots: ITimeSlot[];
 }
 
-const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id, displayName, isTouched, errors, control }) => {
+const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id, displayName, isTouched, errors, control, timeSlots }) => {
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Controller
@@ -26,6 +28,9 @@ const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id
                 render={({ field }) => (
                     <>
                         <MobileTimePicker
+                            // shouldDisableTime={(value) => {
+
+                            // }}
                             {...field}
                             disabled={disabled}
                             readOnly={readOnly}

@@ -39,9 +39,7 @@ const AutoComplete = <T,>({ id, displayName, isTouched, errors, disabled = false
                         open={open}
                         onOpen={() => {
                             setOpen(true);
-                            if (options.length === 0) {
-                                eventEmitter.emit(`${EventType.OPEN_AUTOCOMPLETE} ${id}`);
-                            }
+                            eventEmitter.emit(`${EventType.OPEN_AUTOCOMPLETE} ${id}`);
                         }}
                         onClose={() => setOpen(false)}
                         isOptionEqualToValue={(option, value) => option.value === value.value}

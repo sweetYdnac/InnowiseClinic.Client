@@ -1,11 +1,11 @@
-import Box from '@mui/material/Box';
-import { FunctionComponent } from 'react';
-import Modal from '@mui/material/Modal';
 import CloseIcon from '@mui/icons-material/Close';
+import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import '../customizedModal/CustomizedModal.css';
-import { eventEmitter } from '../../events/events';
+import Modal from '@mui/material/Modal';
+import { FunctionComponent } from 'react';
 import { EventType } from '../../events/eventTypes';
+import { eventEmitter } from '../../events/events';
+import '../customizedModal/CustomizedModal.css';
 
 interface CustomizedModalProps {
     isOpen: boolean;
@@ -13,11 +13,7 @@ interface CustomizedModalProps {
     children: React.ReactNode;
 }
 
-const CustomizedModal: FunctionComponent<CustomizedModalProps> = ({
-    isOpen,
-    name,
-    children,
-}: CustomizedModalProps) => {
+const CustomizedModal: FunctionComponent<CustomizedModalProps> = ({ isOpen, name, children }: CustomizedModalProps) => {
     const closeModal = () => {
         eventEmitter.emit(`${EventType.CLICK_CLOSE_MODAL} ${name}`);
     };

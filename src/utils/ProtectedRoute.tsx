@@ -1,11 +1,11 @@
+import jwt from 'jwt-decode';
 import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginMessage } from '../components/Header';
+import Loader from '../components/Loader';
 import { EventType } from '../events/eventTypes';
 import { eventEmitter } from '../events/events';
 import AuthorizationService from '../services/AuthorizationService';
-import jwt from 'jwt-decode';
-import Loader from '../components/Loader';
 
 interface ProtectedRouteProps {
     children: ReactNode;
@@ -21,9 +21,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
             if (!refreshToken) {
                 navigate('/');
-                eventEmitter.emit(
-                    `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`
-                );
+                eventEmitter.emit(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`);
             } else {
                 await AuthorizationService.refresh().then(() => {
                     if (AuthorizationService.getAccessToken()) {

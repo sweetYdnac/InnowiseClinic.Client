@@ -1,9 +1,9 @@
-import { Routes, Route } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import Header from '../../components/Header';
-import Profile from '../profile/Profile';
-import Home from '../Home';
 import Popup from '../../components/Popup';
 import ProtectedRoute from '../../utils/ProtectedRoute';
+import Home from '../Home';
+import Profile from '../profile/Profile';
 
 function App() {
     return (

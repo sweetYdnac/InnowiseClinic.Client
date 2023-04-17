@@ -16,10 +16,7 @@ import ILoginRequest from '../../types/authorization/requests/ILoginRequest';
 import { AxiosError } from 'axios';
 
 const validationSchema = yup.object().shape({
-    email: yup
-        .string()
-        .required('Please, enter the email')
-        .email(`You've entered an invalid email`),
+    email: yup.string().required('Please, enter the email').email(`You've entered an invalid email`),
     password: yup
         .string()
         .min(6, 'Password must be at least 6 characters')
@@ -45,32 +42,22 @@ const Login: FunctionComponent = () => {
     const onSubmit = async (data: ILoginRequest) => {
         try {
             await AuthorizationService.signIn(data);
-            eventEmitter.emit(
-                `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`
-            );
+            eventEmitter.emit(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`);
         } catch (error) {
             if (error instanceof AxiosError && error.response?.status === 400) {
                 setError('email', {
-                    message:
-                        error.response.data.errors?.Email?.[0] ||
-                        error.response.data.Message ||
-                        '',
+                    message: error.response.data.errors?.Email?.[0] || error.response.data.Message || '',
                 });
 
                 setError('password', {
-                    message:
-                        error.response.data.errors?.Password?.[0] ||
-                        error.response.data.Message ||
-                        '',
+                    message: error.response.data.errors?.Password?.[0] || error.response.data.Message || '',
                 });
             }
         }
     };
 
     const opedRegisterModel = () => {
-        eventEmitter.emit(
-            `${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`
-        );
+        eventEmitter.emit(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.REGISTER}`);
     };
 
     return (
@@ -120,11 +107,7 @@ const Login: FunctionComponent = () => {
                         marginTop: '20px',
                     }}
                 >
-                    <Button
-                        onClick={opedRegisterModel}
-                        variant='text'
-                        color='primary'
-                    >
+                    <Button onClick={opedRegisterModel} variant='text' color='primary'>
                         Register
                     </Button>
                     <Button

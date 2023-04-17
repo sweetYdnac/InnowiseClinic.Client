@@ -123,6 +123,15 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
             });
         };
 
+        const onSpecializationChange = async () => {
+            let specialization = getValues('specialization')?.item;
+
+            if (!specialization) {
+                setValue('service', null);
+                setValue('doctor', null);
+            }
+        };
+
         const getDoctors = async (value = '') => {
             let data = {
                 currentPage: 1,
@@ -135,11 +144,14 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
 
             let doctors = (await DoctorsService.getPaged(data)).items;
 
-            return doctors.map((item) => {
-                return {
-                    label: item.fullName,
-                    item: item,
-                } as IAutoCompleteItem<IDoctorInformationResponse>;
+            setOptions({
+                ...options,
+                doctors: doctors.map((item) => {
+                    return {
+                        label: item.fullName,
+                        item: item,
+                    } as IAutoCompleteItem<IDoctorInformationResponse>;
+                }),
             });
         };
 
@@ -181,13 +193,17 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
         const onServiceChange = async () => {
             let service = getValues('service')?.item;
 
-            if (service?.specializationId && getValues('specialization') === null) {
-                let specialization = await SpecializationsService.getById(service?.specializationId);
+            if (!service) {
+                await getServices();
+            } else {
+                if (service?.specializationId && getValues('specialization') === null) {
+                    let specialization = await SpecializationsService.getById(service?.specializationId);
 
-                setValue('specialization', {
-                    label: specialization.title,
-                    item: specialization,
-                } as IAutoCompleteItem<ISpecializationResponse>);
+                    setValue('specialization', {
+                        label: specialization.title,
+                        item: specialization,
+                    } as IAutoCompleteItem<ISpecializationResponse>);
+                }
             }
         };
 
@@ -196,11 +212,15 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
         eventEmitter.addListener(`${EventType.ENTER_TIMESLOT}`, setDoctorsFromTimeSlot);
 
         eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('office').name}`, getOffices);
+
         eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specialization').name}`, getSpecializations);
         eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specialization').name}`, getSpecializations);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('specialization').name}`, onSpecializationChange);
+
         eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('doctor').name}`, getDoctors);
         eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('doctor').name}`, getDoctors);
         eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('doctor').name}`, onDoctorChange);
+
         eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('service').name}`, getServices);
         eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('service').name}`, getServices);
         eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('service').name}`, onServiceChange);
@@ -211,11 +231,18 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
             eventEmitter.removeListener(`${EventType.ENTER_TIMESLOT}`, setDoctorsFromTimeSlot);
 
             eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('office').name}`, getOffices);
+
             eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specialization').name}`, getSpecializations);
             eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specialization').name}`, getSpecializations);
+            eventEmitter.removeListener(
+                `${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('specialization').name}`,
+                onSpecializationChange
+            );
+
             eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('doctor').name}`, getDoctors);
             eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('doctor').name}`, getDoctors);
             eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('doctor').name}`, onDoctorChange);
+
             eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('service').name}`, getServices);
             eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('service').name}`, getServices);
             eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('service').name}`, onServiceChange);
@@ -311,6 +338,7 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                     isTouched={!!touchedFields.time}
                     errors={errors.time?.message}
                     control={control}
+                    timeSlots={timeSlots}
                 />
                 {/* <TimeSlots timeSlots={timeSlots} /> */}
             </div>

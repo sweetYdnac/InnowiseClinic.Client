@@ -10,11 +10,7 @@ interface PhotoDownloadProps {
     photo: string;
 }
 
-const PhotoDownload: FunctionComponent<PhotoDownloadProps> = ({
-    workMode,
-    register,
-    photo,
-}: PhotoDownloadProps) => {
+const PhotoDownload: FunctionComponent<PhotoDownloadProps> = ({ workMode, register, photo }: PhotoDownloadProps) => {
     const onSubmitFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         const reader = new FileReader();
@@ -40,17 +36,8 @@ const PhotoDownload: FunctionComponent<PhotoDownloadProps> = ({
             <img width='100' alt='1' src={photo} />
 
             {workMode === 'edit' && (
-                <IconButton
-                    color='primary'
-                    aria-label='upload picture'
-                    component='label'
-                >
-                    <input
-                        hidden
-                        accept='image/*'
-                        type='file'
-                        onChange={onSubmitFile}
-                    />
+                <IconButton color='primary' aria-label='upload picture' component='label'>
+                    <input hidden accept='image/*' type='file' onChange={onSubmitFile} />
                     <PhotoCamera />
                 </IconButton>
             )}
