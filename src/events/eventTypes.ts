@@ -1,4 +1,5 @@
 export enum EventType {
+    CLOSE_MODAL = 'closeModal',
     CLICK_CLOSE_MODAL = 'switchModal',
     SHOW_POPUP = 'showPopup',
     DECLINE_DIALOG = 'declineDialog',
@@ -7,4 +8,5 @@ export enum EventType {
     OPEN_AUTOCOMPLETE = 'openAutocomplete',
     AUTOCOMPLETE_INPUT_CHANGE = 'autocompleteInputChange',
     AUTOCOMPLETE_VALUE_CHANGE = 'autocompleteValueChange',
+    SWITCH_ASIDE = 'switchAside',
 }

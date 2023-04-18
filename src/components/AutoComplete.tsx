@@ -10,12 +10,12 @@ interface AutoCompleteProps<T> {
     displayName: string;
     isTouched: boolean | undefined;
     errors: string | undefined;
-    disabled?: boolean;
     control: Control<any, any>;
     options: IAutoCompleteItem<T>[];
+    disabled?: boolean;
 }
 
-const AutoComplete = <T,>({ id, displayName, isTouched, errors, disabled = false, control, options }: AutoCompleteProps<T>) => {
+const AutoComplete = <T,>({ id, displayName, isTouched, errors, control, options, disabled = false }: AutoCompleteProps<T>) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -35,7 +35,6 @@ const AutoComplete = <T,>({ id, displayName, isTouched, errors, disabled = false
                         onInputChange={(_e, value) => {
                             eventEmitter.emit(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${id}`, value);
                         }}
-                        disabled={disabled}
                         open={open}
                         onOpen={() => {
                             setOpen(true);
@@ -45,13 +44,13 @@ const AutoComplete = <T,>({ id, displayName, isTouched, errors, disabled = false
                         isOptionEqualToValue={(option, value) => option.value === value.value}
                         getOptionLabel={(option) => option.label}
                         options={options}
+                        disabled={disabled}
                         autoHighlight
-                        sx={{ width: 300 }}
+                        sx={{ m: 1, width: '75%' }}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
                                 label={displayName}
-                                sx={{ m: 1, width: '75%' }}
                                 color={(errors?.length ?? 0) > 0 && isTouched ? 'error' : 'success'}
                                 focused={(errors?.length ?? 0) === 0 && isTouched}
                                 variant='standard'

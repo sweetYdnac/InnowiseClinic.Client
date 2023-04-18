@@ -1,16 +1,14 @@
 import { Route, Routes } from 'react-router-dom';
-import Header from '../../components/Header';
-import Popup from '../../components/Popup';
 import ProtectedRoute from '../../utils/ProtectedRoute';
-import Home from '../Home';
+import Home from '../home/Home';
+import Layout from '../layout/Layout';
 import Profile from '../profile/Profile';
+import Doctors from '../doctors/Doctors';
 
 function App() {
     return (
-        <>
-            <Header />
-
-            <Routes>
+        <Routes>
+            <Route element={<Layout />}>
                 <Route path='/' element={<Home />}></Route>
                 <Route
                     path='/profile'
@@ -20,10 +18,16 @@ function App() {
                         </ProtectedRoute>
                     }
                 ></Route>
-            </Routes>
-
-            <Popup />
-        </>
+                <Route
+                    path='/doctors'
+                    element={
+                        <ProtectedRoute>
+                            <Doctors />
+                        </ProtectedRoute>
+                    }
+                ></Route>
+            </Route>
+        </Routes>
     );
 }
 

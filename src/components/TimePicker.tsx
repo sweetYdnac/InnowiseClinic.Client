@@ -28,9 +28,6 @@ const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id
                 render={({ field }) => (
                     <>
                         <MobileTimePicker
-                            // shouldDisableTime={(value) => {
-
-                            // }}
                             {...field}
                             disabled={disabled}
                             readOnly={readOnly}
@@ -39,18 +36,25 @@ const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id
                             minutesStep={10}
                             ampmInClock={true}
                             closeOnSelect={true}
-                            minTime={dayjs('08:00', 'HH:mm')}
-                            maxTime={dayjs('18:00', 'HH:mm')}
-                            defaultValue={field.value as dayjs.Dayjs}
-                            value={field.value as dayjs.Dayjs}
-                            onChange={(date) => field.onChange(date)}
+                            shouldDisableTime={(value: dayjs.Dayjs, view) => {
+                                if (view === 'hours') {
+                                    return !timeSlots.some((slot) => slot.parsedTime.hour() === value.hour());
+                                } else if (view === 'minutes') {
+                                    return !timeSlots.some((slot) => slot.parsedTime.format('HH:mm') === value.format('HH:mm'));
+                                }
+
+                                return false;
+                            }}
+                            defaultValue={field?.value?.parsedTime ?? null}
+                            value={field?.value?.parsedTime ?? null}
+                            onChange={(date) => field.onChange(timeSlots.find((slot) => slot.time === date?.format('HH:mm')))}
                             onAccept={() => field.onBlur()}
                             onSelectedSectionsChange={() => field.onBlur()}
                             slotProps={{
                                 textField: {
                                     sx: { m: 1, width: '75%' },
-                                    color: !readOnly && (errors?.length ?? 0) > 0 && isTouched ? 'error' : 'success',
-                                    focused: !readOnly && (errors?.length ?? 0) === 0 && isTouched,
+                                    color: (errors?.length ?? 0) > 0 && isTouched ? 'error' : 'success',
+                                    focused: (errors?.length ?? 0) === 0 && isTouched,
                                     variant: 'standard',
                                     helperText: isTouched ? errors : '',
                                     error: (errors?.length ?? 0) > 0 && isTouched,

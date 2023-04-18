@@ -35,9 +35,9 @@ const update = async (id: string, photo: string) => {
     });
 };
 
-const DocumentsService = {
+const PhotosService = {
     getById,
     update,
 };
 
-export default DocumentsService;
+export default PhotosService;

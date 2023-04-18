@@ -1,17 +1,30 @@
 import TextField from '@mui/material/TextField';
-import { FunctionComponent } from 'react';
+import { FunctionComponent, ReactNode } from 'react';
 import { UseFormRegisterReturn } from 'react-hook-form';
 import { WorkMode } from '../types/common/WorkMode';
+import { InputAdornment } from '@mui/material';
 
-interface TextfieldProps {
+interface CustomTextFieldProps {
     workMode: WorkMode;
     displayName: string;
     isTouched: boolean | undefined;
     errors: string | undefined;
     register: UseFormRegisterReturn<string>;
+    inputMode: 'text' | 'numeric';
+    startAdornment?: ReactNode;
+    endAdornment?: ReactNode;
 }
 
-const Textfield: FunctionComponent<TextfieldProps> = ({ workMode, displayName, isTouched, errors, register }: TextfieldProps) => {
+const CustomTextfield: FunctionComponent<CustomTextFieldProps> = ({
+    workMode,
+    displayName,
+    isTouched,
+    errors,
+    register,
+    inputMode,
+    startAdornment,
+    endAdornment,
+}: CustomTextFieldProps) => {
     return (
         <TextField
             sx={{ m: 1, width: '75%' }}
@@ -24,7 +37,9 @@ const Textfield: FunctionComponent<TextfieldProps> = ({ workMode, displayName, i
             helperText={workMode === 'edit' && isTouched ? errors : ''}
             InputProps={{
                 readOnly: workMode === 'view',
-                inputMode: 'text',
+                inputMode: inputMode,
+                startAdornment: <InputAdornment position='start'>{startAdornment}</InputAdornment>,
+                endAdornment: <InputAdornment position='start'>{endAdornment}</InputAdornment>,
             }}
             InputLabelProps={{
                 shrink: true,
@@ -33,4 +48,4 @@ const Textfield: FunctionComponent<TextfieldProps> = ({ workMode, displayName, i
     );
 };
 
-export default Textfield;
+export default CustomTextfield;

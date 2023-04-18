@@ -6,18 +6,18 @@ import dayjs from 'dayjs';
 import { FunctionComponent, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
+import Datepicker from '../../components/CustomDatePicker';
 import CustomDialog from '../../components/CustomDialog';
-import Datepicker from '../../components/Date_Picker';
-import NumericTextfield from '../../components/NumericTextfield';
+import CustomTextfield from '../../components/CustomTextField';
 import PhotoDownload from '../../components/PhotoDownload';
-import Textfield from '../../components/Textfield';
 import { EventType } from '../../events/eventTypes';
 import { eventEmitter } from '../../events/events';
 import AuthorizationService from '../../services/AuthorizationService';
-import DocumentsService from '../../services/DocumentsService';
+import PhotosService from '../../services/PhotosService';
 import PatientsService from '../../services/PatientsService';
 import { WorkMode } from '../../types/common/WorkMode';
 import IUpdateProfileForm from '../../types/profile/IUpdateProfileForm';
+import Loader from '../../components/Loader';
 
 const closeDialogEventName = 'updateProfile';
 
@@ -56,7 +56,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
             let values = rest as IUpdateProfileForm;
 
             if (values.photoId) {
-                let photo = await DocumentsService.getById(values.photoId);
+                let photo = await PhotosService.getById(values.photoId);
                 values.photo = photo;
             }
 
@@ -85,7 +85,7 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
             await PatientsService.updatePatient(AuthorizationService.getAccountId(), request);
 
             if (getValues('photo') !== defaultValues?.photo) {
-                await DocumentsService.update(photoId, photo);
+                await PhotosService.update(photoId, photo);
             }
 
             setWorkMode('view');
@@ -129,7 +129,9 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
 
     return (
         <>
-            {JSON.stringify(getValues()) !== JSON.stringify({}) && (
+            {JSON.stringify(getValues()) === JSON.stringify({}) ? (
+                <Loader isOpen={true} />
+            ) : (
                 <>
                     {mode === 'view' && <Button onClick={enableEditMode}>Edit</Button>}
                     <Box
@@ -147,28 +149,31 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                     >
                         <PhotoDownload workMode={mode} photo={getValues('photo')} register={register('photo')} />
 
-                        <Textfield
+                        <CustomTextfield
                             workMode={mode}
                             displayName='First Name'
                             isTouched={Object.keys(touchedFields).length !== 0}
                             errors={errors.firstName?.message}
                             register={register('firstName')}
+                            inputMode='text'
                         />
 
-                        <Textfield
+                        <CustomTextfield
                             workMode={mode}
                             displayName='Last Name'
                             isTouched={Object.keys(touchedFields).length !== 0}
                             errors={errors.lastName?.message}
                             register={register('lastName')}
+                            inputMode='text'
                         />
 
-                        <Textfield
+                        <CustomTextfield
                             workMode={mode}
                             displayName='Middle Name'
                             isTouched={Object.keys(touchedFields).length !== 0}
                             errors={errors.middleName?.message}
                             register={register('middleName')}
+                            inputMode='text'
                         />
 
                         <Datepicker
@@ -180,12 +185,14 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                             control={control}
                         />
 
-                        <NumericTextfield
+                        <CustomTextfield
                             workMode={mode}
                             displayName='Phone Number'
                             isTouched={Object.keys(touchedFields).length !== 0}
                             errors={errors.phoneNumber?.message}
                             register={register('phoneNumber')}
+                            inputMode='numeric'
+                            startAdornment={<>+</>}
                         />
 
                         {mode === 'edit' && (

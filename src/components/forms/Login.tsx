@@ -1,19 +1,19 @@
-import { FunctionComponent } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
 import Box from '@mui/material/Box';
-import PasswordInput from '../PasswordInput';
-import EmailAddressInput from '../EmailAddressInput';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import { eventEmitter } from '../../events/events';
-import { EventType } from '../../events/eventTypes';
-import { LoginMessage } from '../Header';
-import './styles/ModalForm.css';
-import * as yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { AxiosError } from 'axios';
+import { FunctionComponent } from 'react';
 import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { EventType } from '../../events/eventTypes';
+import { eventEmitter } from '../../events/events';
 import AuthorizationService from '../../services/AuthorizationService';
 import ILoginRequest from '../../types/authorization/requests/ILoginRequest';
-import { AxiosError } from 'axios';
+import EmailAddressInput from '../EmailAddressInput';
+import { LoginMessage } from '../Header';
+import PasswordInput from '../PasswordInput';
+import './styles/ModalForm.css';
 
 const validationSchema = yup.object().shape({
     email: yup.string().required('Please, enter the email').email(`You've entered an invalid email`),
