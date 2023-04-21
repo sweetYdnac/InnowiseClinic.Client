@@ -1,9 +1,9 @@
 import dayjs from 'dayjs';
-import ICreatedResponse from '../types/authorization/responses/ICreatedResponse';
-import ICreateProfileRequest from '../types/profile/requests/ICreateProfileRequest';
-import IUpdateProfileRequest from '../types/profile/requests/IUpdateProfileRequest';
-import IProfileResponse from '../types/profile/response/IProfileResponse';
-import https from '../utils/https-common';
+import ICreatedResponse from '../../types/authorization_api/responses/ICreatedResponse';
+import ICreateProfileRequest from '../../types/profiles_api/patients/requests/ICreateProfileRequest';
+import IUpdateProfileRequest from '../../types/profiles_api/patients/requests/IUpdateProfileRequest';
+import IProfileResponse from '../../types/profiles_api/patients/response/IProfileResponse';
+import https from '../../utils/https-common';
 
 const getById = async (id: string) => {
     const response = (await https.get<IProfileResponse>(`/patients/${id}`)).data;

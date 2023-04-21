@@ -1,51 +1,91 @@
+import { InputAdornment } from '@mui/material';
 import TextField from '@mui/material/TextField';
 import { FunctionComponent, ReactNode } from 'react';
-import { UseFormRegisterReturn } from 'react-hook-form';
+import { Control, Controller } from 'react-hook-form';
 import { WorkMode } from '../types/common/WorkMode';
-import { InputAdornment } from '@mui/material';
 
 interface CustomTextFieldProps {
-    workMode: WorkMode;
+    id: string;
     displayName: string;
-    isTouched: boolean | undefined;
-    errors: string | undefined;
-    register: UseFormRegisterReturn<string>;
+    control: Control<any, any>;
     inputMode: 'text' | 'numeric';
+    workMode?: WorkMode;
     startAdornment?: ReactNode;
     endAdornment?: ReactNode;
 }
 
-const CustomTextfield: FunctionComponent<CustomTextFieldProps> = ({
-    workMode,
+const CustomFormTextfield: FunctionComponent<CustomTextFieldProps> = ({
+    id,
     displayName,
-    isTouched,
-    errors,
-    register,
+    control,
     inputMode,
+    workMode = 'view',
     startAdornment,
     endAdornment,
 }: CustomTextFieldProps) => {
-    return (
-        <TextField
-            sx={{ m: 1, width: '75%' }}
-            color={workMode === 'edit' && (errors?.length ?? 0) > 0 && isTouched ? 'error' : 'success'}
-            focused={workMode === 'edit' && (errors?.length ?? 0) === 0 && isTouched}
-            {...register}
-            label={workMode === 'view' ? displayName : (errors?.length ?? 0) > 0 && isTouched ? 'Error' : displayName}
-            variant='standard'
-            error={workMode === 'edit' && (errors?.length ?? 0) > 0 && isTouched}
-            helperText={workMode === 'edit' && isTouched ? errors : ''}
-            InputProps={{
-                readOnly: workMode === 'view',
-                inputMode: inputMode,
-                startAdornment: <InputAdornment position='start'>{startAdornment}</InputAdornment>,
-                endAdornment: <InputAdornment position='start'>{endAdornment}</InputAdornment>,
-            }}
-            InputLabelProps={{
-                shrink: true,
-            }}
-        />
-    );
+    if (workMode === 'view') {
+        return (
+            <Controller
+                name={id}
+                control={control}
+                defaultValue=''
+                render={({ field }) => (
+                    <>
+                        <TextField
+                            {...field}
+                            sx={{ m: 1, width: '75%' }}
+                            label={displayName}
+                            variant='standard'
+                            InputProps={{
+                                readOnly: true,
+                                inputMode: inputMode,
+                                startAdornment: <InputAdornment position='start'>{startAdornment}</InputAdornment>,
+                                endAdornment: <InputAdornment position='start'>{endAdornment}</InputAdornment>,
+                            }}
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                        />
+                    </>
+                )}
+            />
+        );
+    } else if (workMode === 'edit') {
+        return (
+            <Controller
+                name={id}
+                control={control}
+                defaultValue=''
+                render={({ field, fieldState }) => (
+                    <>
+                        <TextField
+                            {...field}
+                            sx={{ m: 1, width: '75%' }}
+                            color={
+                                (fieldState.error?.message?.length ?? 0) > 0 && (fieldState.isTouched || field.value) ? 'error' : 'success'
+                            }
+                            focused={(fieldState.error?.message?.length ?? 0) === 0 && (fieldState.isTouched || !!field.value)}
+                            label={(fieldState.error?.message?.length ?? 0) > 0 && fieldState.isTouched ? 'Error' : displayName}
+                            variant='standard'
+                            error={(fieldState.error?.message?.length ?? 0) > 0 && (fieldState.isTouched || !!field.value)}
+                            helperText={fieldState.error?.message}
+                            InputProps={{
+                                readOnly: false,
+                                inputMode: inputMode,
+                                startAdornment: <InputAdornment position='start'>{startAdornment}</InputAdornment>,
+                                endAdornment: <InputAdornment position='start'>{endAdornment}</InputAdornment>,
+                            }}
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                        />
+                    </>
+                )}
+            />
+        );
+    }
+
+    return <></>;
 };
 
-export default CustomTextfield;
+export default CustomFormTextfield;

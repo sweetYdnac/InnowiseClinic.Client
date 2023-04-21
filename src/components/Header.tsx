@@ -7,7 +7,7 @@ import { FunctionComponent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EventType } from '../events/eventTypes';
 import { eventEmitter } from '../events/events';
-import AuthorizationService from '../services/AuthorizationService';
+import AuthorizationService from '../services/authorization_api/AuthorizationService';
 import CustomizedModal from './customizedModal/CustomizedModal';
 import Login from './forms/Login';
 import Register from './forms/Register';
@@ -74,9 +74,11 @@ const Header: FunctionComponent = () => {
                 }}
             >
                 <Toolbar>
-                    <IconButton color='inherit' edge='start' onClick={handleAsideToggle} sx={{ mr: 2, display: { sm: 'none' } }}>
-                        <MenuIcon />
-                    </IconButton>
+                    {isAuthorizated && (
+                        <IconButton color='inherit' edge='start' onClick={handleAsideToggle} sx={{ mr: 2, display: { sm: 'none' } }}>
+                            <MenuIcon />
+                        </IconButton>
+                    )}
 
                     <Button onClick={() => navigate('/')} color='inherit'>
                         Innowise Clinic

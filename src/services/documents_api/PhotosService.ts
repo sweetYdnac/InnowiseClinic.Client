@@ -1,4 +1,4 @@
-import https from '../utils/https-common';
+import https from '../../utils/https-common';
 
 const getById = async (id: string) => {
     let response = await https.get<Blob>(`/documents/photos/${id}`, {

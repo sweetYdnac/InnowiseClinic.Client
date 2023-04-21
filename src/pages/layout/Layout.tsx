@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom';
 import Header from '../../components/Header';
 import Popup from '../../components/Popup';
 import Aside from '../../components/navigation/Aside';
-import AuthorizationService from '../../services/AuthorizationService';
+import AuthorizationService from '../../services/authorization_api/AuthorizationService';
 
 interface LayoutProps {}
 

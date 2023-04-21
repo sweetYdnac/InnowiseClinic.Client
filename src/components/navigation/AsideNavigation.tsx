@@ -11,6 +11,7 @@ import ProtectedRoute from '../../utils/ProtectedRoute';
 import CustomizedModal from '../customizedModal/CustomizedModal';
 import CreateAppointment from '../forms/CreateAppointment';
 import AsideItem from './AsideItem';
+
 const createAppointmentModalEventMessage = 'createAppointment';
 
 interface AsideNavigationProps {}

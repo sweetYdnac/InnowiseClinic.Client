@@ -1,16 +1,16 @@
 import { AxiosResponse } from 'axios';
 import jwt from 'jwt-decode';
 import { NIL } from 'uuid';
-import { LoginMessage } from '../components/Header';
-import { EventType } from '../events/eventTypes';
-import { eventEmitter } from '../events/events';
-import ILoginRequest from '../types/authorization/requests/ILoginRequest';
-import IRegisterRequest from '../types/authorization/requests/IRegisterRequest';
-import ICreatedResponse from '../types/authorization/responses/ICreatedResponse';
-import ITokenResponse from '../types/authorization/responses/ITokenResponse';
-import ICreateProfileRequest from '../types/profile/requests/ICreateProfileRequest';
-import https from '../utils/https-common';
-import PatientsService from './PatientsService';
+import { LoginMessage } from '../../components/Header';
+import { EventType } from '../../events/eventTypes';
+import { eventEmitter } from '../../events/events';
+import ILoginRequest from '../../types/authorization_api/requests/ILoginRequest';
+import IRegisterRequest from '../../types/authorization_api/requests/IRegisterRequest';
+import ICreatedResponse from '../../types/authorization_api/responses/ICreatedResponse';
+import ITokenResponse from '../../types/authorization_api/responses/ITokenResponse';
+import ICreateProfileRequest from '../../types/profiles_api/patients/requests/ICreateProfileRequest';
+import https from '../../utils/https-common';
+import PatientsService from '../profiles_api/PatientsService';
 
 function setAuthData(accessToken: string, refreshToken: string) {
     localStorage.setItem('refreshToken', refreshToken);

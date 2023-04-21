@@ -1,4 +1,4 @@
-import IPagedRequest from '../../common/requests/IPagedRequest';
+import IPagedRequest from '../../../common/requests/IPagedRequest';
 
 export default interface IGetPagedDoctorsRequest extends IPagedRequest {
     onlyAtWork: boolean;

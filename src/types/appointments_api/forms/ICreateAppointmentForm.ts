@@ -1,7 +1,8 @@
 import dayjs from 'dayjs';
 import IAutoCompleteItem from '../../common/IAutoCompleteItem';
-import IDoctorInformationResponse from '../../doctors_api/responses/IDoctorInformationResponse';
+
 import IOfficeInformationResponse from '../../offices_api/responses/IOfficeInformationResponse';
+import IDoctorInformationResponse from '../../profiles_api/doctors/responses/IDoctorInformationResponse';
 import IServiceInformationResponse from '../../services_api/responses/service/IServiceInformationResponse';
 import ISpecializationResponse from '../../services_api/responses/specialization/ISpecializationResponse';
 import ITimeSlot from '../ITimeSlot';

@@ -7,32 +7,32 @@ import { useForm, useWatch } from 'react-hook-form';
 import * as yup from 'yup';
 import { EventType } from '../../events/eventTypes';
 import { eventEmitter } from '../../events/events';
-import AppointmentsService from '../../services/AppointmentsService';
-import AuthorizationService from '../../services/AuthorizationService';
-import DoctorsService from '../../services/DoctorsService';
-import OfficesService from '../../services/OfficesService';
-import PatientsService from '../../services/PatientsService';
-import ServicesService from '../../services/ServicesService';
-import SpecializationsService from '../../services/SpecializationsService';
-import ITimeSlot from '../../types/appointment/ITimeSlot';
-import ICreateAppointmentForm from '../../types/appointment/forms/ICreateAppointmentForm';
-import ICreateAppointmentRequest from '../../types/appointment/requests/ICreateAppointmentRequest';
-import IGetTimeSlotsRequest from '../../types/appointment/requests/IGetTimeSlotsRequest';
+import AppointmentsService from '../../services/appointments_api/AppointmentsService';
+import AuthorizationService from '../../services/authorization_api/AuthorizationService';
+import OfficesService from '../../services/offices_api/OfficesService';
+import DoctorsService from '../../services/profiles_api/DoctorsService';
+import PatientsService from '../../services/profiles_api/PatientsService';
+import ServicesService from '../../services/services_api/ServicesService';
+import SpecializationsService from '../../services/services_api/SpecializationsService';
+import ICreateAppointmentDTO from '../../types/appointments_api/ICreateAppointmentDTO';
+import ITimeSlot from '../../types/appointments_api/ITimeSlot';
+import ICreateAppointmentForm from '../../types/appointments_api/forms/ICreateAppointmentForm';
+import ICreateAppointmentRequest from '../../types/appointments_api/requests/ICreateAppointmentRequest';
+import IGetTimeSlotsRequest from '../../types/appointments_api/requests/IGetTimeSlotsRequest';
 import IAutoCompleteItem from '../../types/common/IAutoCompleteItem';
-import IGetPagedDoctorsRequest from '../../types/doctors_api/requests/IGetPagedDoctorsRequest';
-import IDoctorInformationResponse from '../../types/doctors_api/responses/IDoctorInformationResponse';
 import IGetPagedOfficesRequest from '../../types/offices_api/requests/IGetPagedOfficesRequest';
 import IOfficeInformationResponse from '../../types/offices_api/responses/IOfficeInformationResponse';
+import IGetPagedDoctorsRequest from '../../types/profiles_api/doctors/requests/IGetPagedDoctorsRequest';
+import IDoctorInformationResponse from '../../types/profiles_api/doctors/responses/IDoctorInformationResponse';
 import IGetPagedServicesRequest from '../../types/services_api/requests/service/IGetPagedServicesRequest';
 import IGetPagedSpecializationsRequest from '../../types/services_api/requests/specialization/IGetPagedSpecializationsRequest';
 import IServiceInformationResponse from '../../types/services_api/responses/service/IServiceInformationResponse';
 import ISpecializationResponse from '../../types/services_api/responses/specialization/ISpecializationResponse';
 import AutoComplete from '../AutoComplete';
-import CustomDialog from '../CustomDialog';
 import Datepicker from '../CustomDatePicker';
+import CustomDialog from '../CustomDialog';
 import { PopupData } from '../Popup';
 import TimePicker from '../TimePicker';
-
 const validationSchema = yup.object().shape({
     office: yup.mixed<IAutoCompleteItem<IOfficeInformationResponse>>().required('Please, choose the office'),
     doctor: yup.mixed<IAutoCompleteItem<IDoctorInformationResponse>>().required('Please, choose the doctor'),
@@ -44,9 +44,10 @@ const validationSchema = yup.object().shape({
 
 interface CreateAppointmentProps {
     modalName: string;
+    dto?: ICreateAppointmentDTO;
 }
 
-const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalName }: CreateAppointmentProps) => {
+const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalName, dto }: CreateAppointmentProps) => {
     const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
     const [options, setOptions] = useState({
         offices: [] as IAutoCompleteItem<IOfficeInformationResponse>[],
@@ -69,9 +70,37 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
         resolver: yupResolver(validationSchema),
         defaultValues: async () => {
             return {
-                office: null,
-                doctor: null,
-                specialization: null,
+                office: dto
+                    ? {
+                          label: dto.officeAddress,
+                          item: {
+                              id: dto.officeId,
+                              address: dto.officeAddress,
+                          },
+                      }
+                    : null,
+                doctor: dto
+                    ? {
+                          label: dto.doctorFullName,
+                          item: {
+                              id: dto.doctorId,
+                              fullName: dto.doctorFullName,
+                              specializationId: dto.specializationId,
+                              specializationName: dto.specializationName,
+                              officeId: dto.officeId,
+                              officeAddress: dto.officeAddress,
+                          },
+                      }
+                    : null,
+                specialization: dto
+                    ? {
+                          label: dto.specializationName,
+                          item: {
+                              id: dto.specializationId,
+                              title: dto.specializationName,
+                          },
+                      }
+                    : null,
                 service: null,
                 date: dayjs(),
                 time: null,
@@ -174,11 +203,11 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
     }, [watchDate, setValue]);
 
     useEffect(() => {
-        if (options.doctors.length > 0 && watchService !== null && watchDate !== null && watchDate.isValid()) {
+        if ((options.doctors.length > 0 || getValues('doctor')) && watchService !== null && watchDate !== null && watchDate.isValid()) {
             const request = async () => {
                 let data = {
                     date: getValues('date').format('YYYY-MM-DD'),
-                    doctors: options.doctors.map((combobox) => combobox.item.id),
+                    doctors: getValues('doctor') ? getValues('doctor')?.item.id : options.doctors.map((combobox) => combobox.item.id),
                     duration: getValues('service')?.item.duration ?? 30,
                     startTime: '08:00',
                     endTime: '18:00',
@@ -399,21 +428,12 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                     Create Appointment
                 </Typography>
 
-                <AutoComplete
-                    id={register('office').name}
-                    displayName='Office'
-                    isTouched={!!touchedFields.office}
-                    errors={errors.office?.message}
-                    control={control}
-                    options={options.offices}
-                />
+                <AutoComplete id={register('office').name} displayName='Office' control={control} options={options.offices} />
 
                 <AutoComplete
                     disabled={getValues('office') === null}
                     id={register('specialization').name}
                     displayName='Specialization'
-                    isTouched={!!touchedFields.specialization}
-                    errors={errors.specialization?.message}
                     control={control}
                     options={options.specializations}
                 />
@@ -422,8 +442,6 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                     disabled={getValues('office') === null}
                     id={register('doctor').name}
                     displayName='Doctor'
-                    isTouched={!!touchedFields.doctor}
-                    errors={errors.doctor?.message}
                     control={control}
                     options={options.doctors}
                 />
@@ -432,19 +450,15 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                     disabled={getValues('office') === null}
                     id={register('service').name}
                     displayName='Service'
-                    isTouched={!!touchedFields.service}
-                    errors={errors.service?.message}
                     control={control}
                     options={options.services}
                 />
 
                 <Datepicker
-                    readOnly={options.doctors.length === 0 || getValues('service') === null}
-                    disabled={options.doctors.length === 0 || getValues('service') === null}
+                    readOnly={(options.doctors.length === 0 || !getValues('doctor')) && getValues('service') === null}
+                    disabled={(options.doctors.length === 0 || !getValues('doctor')) && getValues('service') === null}
                     id={register('date').name}
                     displayName='Date'
-                    isTouched={!!touchedFields.date}
-                    errors={errors.date?.message}
                     control={control}
                     disableFuture={false}
                     disablePast={true}
@@ -453,12 +467,16 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                 />
 
                 <TimePicker
-                    readOnly={options.doctors.length === 0 || getValues('service') === null || !getValues('date').isValid()}
-                    disabled={options.doctors.length === 0 || getValues('service') === null || !getValues('date').isValid()}
+                    readOnly={
+                        (options.doctors.length === 0 || getValues('doctor') === null) &&
+                        (getValues('service') === null || !getValues('date')?.isValid())
+                    }
+                    disabled={
+                        (options.doctors.length === 0 || getValues('doctor') === null) &&
+                        (getValues('service') === null || !getValues('date')?.isValid())
+                    }
                     id={register('time').name}
                     displayName='Time slot'
-                    isTouched={!!touchedFields.time}
-                    errors={errors.time?.message}
                     control={control}
                     timeSlots={timeSlots}
                 />
@@ -474,12 +492,12 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                         (errors.service?.message?.length ?? 0) > 0 ||
                         (errors.date?.message?.length ?? 0) > 0 ||
                         (errors.time?.message?.length ?? 0) > 0 ||
-                        !touchedFields.office ||
-                        !touchedFields.specialization ||
-                        !touchedFields.doctor ||
-                        !touchedFields.service ||
-                        !touchedFields.date ||
-                        !touchedFields.time
+                        (!touchedFields.office && !getValues('office')) ||
+                        (!touchedFields.specialization && !getValues('specialization')) ||
+                        (!touchedFields.doctor && !getValues('doctor')) ||
+                        (!touchedFields.service && !getValues('service')) ||
+                        (!touchedFields.date && !getValues('date')) ||
+                        (!touchedFields.time && !getValues('time'))
                     }
                 >
                     Create

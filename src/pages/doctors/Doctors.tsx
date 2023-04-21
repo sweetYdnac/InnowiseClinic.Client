@@ -1,21 +1,31 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Box } from '@mui/material';
-import { FunctionComponent, useState } from 'react';
+import { Box, Typography } from '@mui/material';
+import { FunctionComponent, useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useParams } from 'react-router-dom';
 import * as yup from 'yup';
+import AutoComplete from '../../components/AutoComplete';
 import CardsGrid from '../../components/CardsGrid';
+import CustomFormTextfield from '../../components/CustomTextField';
 import Loader from '../../components/Loader';
-import DoctorsService from '../../services/DoctorsService';
-import PhotosService from '../../services/PhotosService';
+import { PopupData } from '../../components/Popup';
+import Paginator from '../../components/navigation/Paginator';
+import { EventType } from '../../events/eventTypes';
+import { eventEmitter } from '../../events/events';
+import PhotosService from '../../services/documents_api/PhotosService';
+import OfficesService from '../../services/offices_api/OfficesService';
+import DoctorsService from '../../services/profiles_api/DoctorsService';
+import SpecializationsService from '../../services/services_api/SpecializationsService';
 import IAutoCompleteItem from '../../types/common/IAutoCompleteItem';
 import ICard from '../../types/common/ICard';
-import IPagination from '../../types/common/IPagination';
-import IGetPagedDoctorsRequest from '../../types/doctors_api/requests/IGetPagedDoctorsRequest';
-import IDoctorInformationResponse from '../../types/doctors_api/responses/IDoctorInformationResponse';
+import IPagination from '../../types/common/IPagingData';
+import IGetPagedOfficesRequest from '../../types/offices_api/requests/IGetPagedOfficesRequest';
 import IOfficeInformationResponse from '../../types/offices_api/responses/IOfficeInformationResponse';
+import IDoctorInformationDTO from '../../types/profiles_api/doctors/IDoctorInformationDTO';
+import IGetPagedDoctorsForm from '../../types/profiles_api/doctors/forms/IGetPagedDoctorsForm';
+import IGetPagedDoctorsRequest from '../../types/profiles_api/doctors/requests/IGetPagedDoctorsRequest';
+import IGetPagedSpecializationsRequest from '../../types/services_api/requests/specialization/IGetPagedSpecializationsRequest';
 import ISpecializationResponse from '../../types/services_api/responses/specialization/ISpecializationResponse';
-import { AxiosError } from 'axios';
-import AutoComplete from '../../components/AutoComplete';
 
 interface DoctorsProps {}
 
@@ -29,92 +39,193 @@ const validationSchema = yup.object().shape({
 });
 
 const Doctors: FunctionComponent<DoctorsProps> = () => {
+    const { page } = useParams();
+    const [isLoading, setIsLoading] = useState(false);
     const [options, setOptions] = useState({
         offices: [] as IAutoCompleteItem<IOfficeInformationResponse>[],
         specializations: [] as IAutoCompleteItem<ISpecializationResponse>[],
-        doctors: [] as IAutoCompleteItem<IDoctorInformationResponse>[],
+        doctors: [] as ICard<IDoctorInformationDTO>[],
+    });
+    const [pagination, setPagination] = useState<IPagination>({
+        currentPage: parseInt(page ?? '1'),
+        pageSize: 1,
+        totalCount: 1,
+        totalPages: 1,
     });
 
-    const [patination, setPatination] = useState<IPagination>();
-    const [doctorsCards, setDoctorsCards] = useState<ICard[]>([]);
-
-    const {
-        register,
-        handleSubmit,
-        setError,
-        setValue,
-        getValues,
-        formState: { errors, touchedFields },
-        control,
-    } = useForm<IGetPagedDoctorsRequest>({
+    const { register, setValue, getValues, control, watch } = useForm<IGetPagedDoctorsForm>({
         mode: 'onBlur',
         resolver: yupResolver(validationSchema),
         defaultValues: async () => {
-            let defaultValues = {
-                currentPage: 1,
-                pageSize: 20,
-                onlyAtWork: true,
-                officeId: '',
-                specializationId: '',
-                fullName: '',
-            } as IGetPagedDoctorsRequest;
-
-            getDoctors(defaultValues);
-
-            return defaultValues;
+            return {
+                office: null,
+                specialization: null,
+                doctor: '',
+            } as IGetPagedDoctorsForm;
         },
     });
 
-    const getDoctors = async (request?: IGetPagedDoctorsRequest) => {
-        const values = request ?? getValues();
+    const getDoctors = useCallback(
+        async (page = 1) => {
+            setIsLoading(true);
 
-        const response = await DoctorsService.getPaged(values);
-        const { items, ...pagingData } = response;
+            const data = getValues();
+            const values = {
+                currentPage: page,
+                pageSize: pagination?.pageSize,
+                onlyAtWork: true,
+                officeId: data.office?.item.id ?? '',
+                specializationId: data.specialization?.item.id ?? '',
+                fullName: data.doctor,
+            } as IGetPagedDoctorsRequest;
 
-        setPatination(pagingData as IPagination);
+            try {
+                const response = await DoctorsService.getPaged(values);
+                const { items, ...pagingData } = response;
 
-        setDoctorsCards(
-            await Promise.all(
-                items.map(async (item) => {
-                    return {
-                        id: item.id,
-                        title: item.fullName,
-                        subtitle: item.specializationName,
-                        photo: await PhotosService.getById(item.photoId),
-                        content: (
-                            <>
-                                <p>Experience - {item.experience}</p>
-                                <p>Office address - {item.officeAddress}.</p>
-                            </>
-                        ),
-                    } as ICard;
-                })
-            )
-        );
-    };
+                setPagination(pagingData);
 
-    const onSubmit = async (data: IGetPagedDoctorsRequest) => {
-        try {
-            await getDoctors();
-        } catch (error) {
-            if (error instanceof AxiosError && error.response?.status === 400) {
+                setOptions({
+                    ...options,
+                    doctors: await Promise.all(
+                        items.map(async (item) => {
+                            let photo = await PhotosService.getById(item.photoId);
+
+                            return {
+                                id: item.id,
+                                title: item.fullName,
+                                subtitle: item.specializationName,
+                                photo: photo,
+                                content: (
+                                    <>
+                                        <p>Experience - {item.experience}</p>
+                                        <p>Office address - {item.officeAddress}.</p>
+                                    </>
+                                ),
+                                dto: {
+                                    photo: photo,
+                                    fullName: item.fullName,
+                                    officeId: item.officeId,
+                                    officeAddress: item.officeAddress,
+                                    experience: item.experience,
+                                    specialization: item.specializationName,
+                                    specializationId: item.specializationId,
+                                },
+                            } as ICard<IDoctorInformationDTO>;
+                        })
+                    ),
+                });
+            } catch (error) {
+                eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
+                    message: 'Unexpected error occured.',
+                } as PopupData);
             }
-        }
+
+            setIsLoading(false);
+        },
+        [getValues, options, pagination?.pageSize]
+    );
+
+    const handlePageChange = async (page: number) => {
+        setPagination({
+            ...pagination,
+            currentPage: page,
+        });
+
+        await getDoctors(page);
     };
+
+    useEffect(() => {
+        const getOffices = async () => {
+            let data = {
+                currentPage: 1,
+                pageSize: 50,
+            } as IGetPagedOfficesRequest;
+
+            let offices = (await OfficesService.getPaged(data)).items;
+
+            setOptions({
+                ...options,
+                offices: offices.map((item) => {
+                    return {
+                        label: item.address,
+                        item: item,
+                    } as IAutoCompleteItem<IOfficeInformationResponse>;
+                }),
+            });
+        };
+        const getSpecializations = async (value = '') => {
+            let data = {
+                currentPage: 1,
+                pageSize: 50,
+                isActive: true,
+                title: value,
+            } as IGetPagedSpecializationsRequest;
+
+            let specializations = (await SpecializationsService.getPaged(data)).items;
+
+            setOptions({
+                ...options,
+                specializations: specializations.map((item) => {
+                    return {
+                        label: item.title,
+                        item: item,
+                    } as IAutoCompleteItem<ISpecializationResponse>;
+                }),
+            });
+        };
+
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('office').name}`, getOffices);
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specialization').name}`, getSpecializations);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specialization').name}`, getSpecializations);
+
+        return () => {
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('office').name}`, getOffices);
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specialization').name}`, getSpecializations);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specialization').name}`, getSpecializations);
+        };
+    }, [getValues, options, register, setValue]);
+
+    useEffect(() => {
+        const subscription = watch(() => getDoctors());
+
+        return () => subscription.unsubscribe();
+    }, [getDoctors, watch]);
 
     return (
         <Box component={'div'} sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Box component={'form'} onSubmit={handleSubmit(onSubmit)} sx={{ display: 'flex', flexDirection: 'row' }}>
-                {/* <AutoComplete
-                    id={register('office').name}
-                    displayName='Office'
-                    isTouched={!!touchedFields.office}
-                    errors={errors.office?.message}
+            <Box component={'form'} sx={{ display: 'flex', flexDirection: 'row' }}>
+                <CustomFormTextfield
+                    id={register('doctor').name}
                     control={control}
-                    options={options.offices}
-                /> */}
+                    workMode={'edit'}
+                    displayName='Doctor name'
+                    inputMode='text'
+                />
+                <AutoComplete id={register('office').name} displayName='Office' control={control} options={options.offices} />
+                <AutoComplete
+                    id={register('specialization').name}
+                    displayName='Specialization'
+                    control={control}
+                    options={options.specializations}
+                />
             </Box>
-            <Box>{doctorsCards.length > 0 ? <CardsGrid items={doctorsCards} /> : <Loader isOpen={doctorsCards.length === 0} />}</Box>
+            <Box>
+                {!isLoading ? (
+                    <>
+                        {options.doctors.length === 0 ? (
+                            <Typography>Doctors with selected filters does not exist.</Typography>
+                        ) : (
+                            <>
+                                <CardsGrid items={options.doctors} />
+                                <Paginator data={pagination} handleChange={(e, value) => handlePageChange(value)} />
+                            </>
+                        )}
+                    </>
+                ) : (
+                    <Loader isOpen={isLoading} />
+                )}
+            </Box>
         </Box>
     );
 };

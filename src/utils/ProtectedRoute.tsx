@@ -5,7 +5,7 @@ import { LoginMessage } from '../components/Header';
 import Loader from '../components/Loader';
 import { EventType } from '../events/eventTypes';
 import { eventEmitter } from '../events/events';
-import AuthorizationService from '../services/AuthorizationService';
+import AuthorizationService from '../services/authorization_api/AuthorizationService';
 
 interface ProtectedRouteProps {
     children: ReactNode;

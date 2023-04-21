@@ -8,8 +8,6 @@ interface DatepickerProps {
     readOnly: boolean;
     id: string;
     displayName: string;
-    isTouched: boolean | undefined;
-    errors: string | undefined;
     control: Control<any, any>;
     disableFuture?: boolean;
     disablePast?: boolean;
@@ -22,8 +20,6 @@ const Datepicker: FunctionComponent<DatepickerProps> = ({
     readOnly,
     id,
     displayName,
-    isTouched,
-    errors,
     control,
     disableFuture = true,
     disablePast = false,
@@ -37,7 +33,7 @@ const Datepicker: FunctionComponent<DatepickerProps> = ({
                 name={id}
                 control={control}
                 defaultValue=''
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                     <>
                         <DatePicker
                             disabled={disabled}
@@ -57,11 +53,17 @@ const Datepicker: FunctionComponent<DatepickerProps> = ({
                             slotProps={{
                                 textField: {
                                     sx: { m: 1, width: '75%' },
-                                    color: !readOnly && (errors?.length ?? 0) > 0 && isTouched ? 'error' : 'success',
-                                    focused: !readOnly && (errors?.length ?? 0) === 0 && isTouched,
+                                    color:
+                                        !readOnly && (fieldState.error?.message?.length ?? 0) > 0 && (fieldState.isTouched || field.value)
+                                            ? 'error'
+                                            : 'success',
+                                    focused:
+                                        !readOnly &&
+                                        (fieldState.error?.message?.length ?? 0) === 0 &&
+                                        (fieldState.isTouched || !!field.value),
                                     variant: 'standard',
-                                    helperText: isTouched ? errors : '',
-                                    error: (errors?.length ?? 0) > 0 && isTouched,
+                                    helperText: fieldState.error?.message,
+                                    error: (fieldState.error?.message?.length ?? 0) > 0 && (fieldState.isTouched || field.value),
                                 },
                                 popper: {
                                     placement: 'auto',

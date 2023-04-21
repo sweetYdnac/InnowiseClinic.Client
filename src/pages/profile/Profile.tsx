@@ -8,16 +8,16 @@ import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import Datepicker from '../../components/CustomDatePicker';
 import CustomDialog from '../../components/CustomDialog';
-import CustomTextfield from '../../components/CustomTextField';
+import CustomFormTextfield from '../../components/CustomTextField';
+import Loader from '../../components/Loader';
 import PhotoDownload from '../../components/PhotoDownload';
 import { EventType } from '../../events/eventTypes';
 import { eventEmitter } from '../../events/events';
-import AuthorizationService from '../../services/AuthorizationService';
-import PhotosService from '../../services/PhotosService';
-import PatientsService from '../../services/PatientsService';
+import AuthorizationService from '../../services/authorization_api/AuthorizationService';
+import PhotosService from '../../services/documents_api/PhotosService';
+import PatientsService from '../../services/profiles_api/PatientsService';
 import { WorkMode } from '../../types/common/WorkMode';
-import IUpdateProfileForm from '../../types/profile/IUpdateProfileForm';
-import Loader from '../../components/Loader';
+import IUpdateProfileForm from '../../types/profiles_api/patients/IUpdatePatientProfileForm';
 
 const closeDialogEventName = 'updateProfile';
 
@@ -149,30 +149,27 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                     >
                         <PhotoDownload workMode={mode} photo={getValues('photo')} register={register('photo')} />
 
-                        <CustomTextfield
+                        <CustomFormTextfield
+                            id={register('firstName').name}
+                            control={control}
                             workMode={mode}
                             displayName='First Name'
-                            isTouched={Object.keys(touchedFields).length !== 0}
-                            errors={errors.firstName?.message}
-                            register={register('firstName')}
                             inputMode='text'
                         />
 
-                        <CustomTextfield
+                        <CustomFormTextfield
+                            id={register('lastName').name}
+                            control={control}
                             workMode={mode}
                             displayName='Last Name'
-                            isTouched={Object.keys(touchedFields).length !== 0}
-                            errors={errors.lastName?.message}
-                            register={register('lastName')}
                             inputMode='text'
                         />
 
-                        <CustomTextfield
+                        <CustomFormTextfield
+                            id={register('middleName').name}
+                            control={control}
                             workMode={mode}
                             displayName='Middle Name'
-                            isTouched={Object.keys(touchedFields).length !== 0}
-                            errors={errors.middleName?.message}
-                            register={register('middleName')}
                             inputMode='text'
                         />
 
@@ -180,17 +177,14 @@ const Profile: FunctionComponent<ProfileProps> = ({ workMode = 'view' }) => {
                             readOnly={mode === 'view'}
                             id={register('dateOfBirth').name}
                             displayName='Date of Birth'
-                            isTouched={Object.keys(touchedFields).length !== 0}
-                            errors={errors.dateOfBirth?.message}
                             control={control}
                         />
 
-                        <CustomTextfield
+                        <CustomFormTextfield
+                            id={register('phoneNumber').name}
+                            control={control}
                             workMode={mode}
                             displayName='Phone Number'
-                            isTouched={Object.keys(touchedFields).length !== 0}
-                            errors={errors.phoneNumber?.message}
-                            register={register('phoneNumber')}
                             inputMode='numeric'
                             startAdornment={<>+</>}
                         />

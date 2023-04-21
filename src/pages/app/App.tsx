@@ -4,6 +4,8 @@ import Home from '../home/Home';
 import Layout from '../layout/Layout';
 import Profile from '../profile/Profile';
 import Doctors from '../doctors/Doctors';
+import DoctorInformation from '../doctors/DoctorInformation';
+import Services from '../services/Services';
 
 function App() {
     return (
@@ -19,10 +21,26 @@ function App() {
                     }
                 ></Route>
                 <Route
-                    path='/doctors'
+                    path='/doctors/:page?'
                     element={
                         <ProtectedRoute>
                             <Doctors />
+                        </ProtectedRoute>
+                    }
+                ></Route>
+                <Route
+                    path='/doctor/:id?'
+                    element={
+                        <ProtectedRoute>
+                            <DoctorInformation />
+                        </ProtectedRoute>
+                    }
+                ></Route>
+                <Route
+                    path='/services'
+                    element={
+                        <ProtectedRoute>
+                            <Services />
                         </ProtectedRoute>
                     }
                 ></Route>

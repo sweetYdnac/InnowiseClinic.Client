@@ -1,0 +1,16 @@
+.card::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    background-color: #198754;
+}
+
+.card:hover:before {
+    opacity: 0.15;
+}
+
+.card:hover {
+    transform: scale(1.05);
+}

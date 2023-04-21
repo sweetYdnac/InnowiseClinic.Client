@@ -1,14 +1,13 @@
 import { Box } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
-import { FunctionComponent } from 'react';
 import ICard from '../types/common/ICard';
-import Card from './Card';
+import Card from './Card/Card';
 
-interface CardsGridProps {
-    items: ICard[];
+interface CardsGridProps<T> {
+    items: ICard<T>[];
 }
 
-const CardsGrid: FunctionComponent<CardsGridProps> = ({ items }) => {
+const CardsGrid = <T,>({ items }: CardsGridProps<T>) => {
     return (
         <Box sx={{ flexGrow: 1, p: 2 }}>
             <Grid container justifyContent='space-evenly' rowGap={{ xs: 3, sm: 5 }} columnGap={{ xs: 2, md: 4 }}>

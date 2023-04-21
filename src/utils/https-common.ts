@@ -2,7 +2,7 @@ import axios, { AxiosRequestHeaders } from 'axios';
 import { PopupData } from '../components/Popup';
 import { EventType } from '../events/eventTypes';
 import { eventEmitter } from '../events/events';
-import AuthorizationService from '../services/AuthorizationService';
+import AuthorizationService from '../services/authorization_api/AuthorizationService';
 
 const axiosInstance = axios.create({
     baseURL: 'https://localhost:10001',

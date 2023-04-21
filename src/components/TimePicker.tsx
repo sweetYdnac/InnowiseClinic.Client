@@ -5,27 +5,25 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { FunctionComponent } from 'react';
 import { Control, Controller } from 'react-hook-form';
-import ITimeSlot from '../types/appointment/ITimeSlot';
+import ITimeSlot from '../types/appointments_api/ITimeSlot';
 
 interface TimePickerProps {
     readOnly: boolean;
     disabled?: boolean;
     id: string;
     displayName: string;
-    isTouched: boolean | undefined;
-    errors: string | undefined;
     control: Control<any, any>;
     timeSlots: ITimeSlot[];
 }
 
-const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id, displayName, isTouched, errors, control, timeSlots }) => {
+const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id, displayName, control, timeSlots }) => {
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Controller
                 name={id}
                 control={control}
                 defaultValue=''
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                     <>
                         <MobileTimePicker
                             {...field}
@@ -53,11 +51,14 @@ const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id
                             slotProps={{
                                 textField: {
                                     sx: { m: 1, width: '75%' },
-                                    color: (errors?.length ?? 0) > 0 && isTouched ? 'error' : 'success',
-                                    focused: (errors?.length ?? 0) === 0 && isTouched,
+                                    color:
+                                        (fieldState.error?.message?.length ?? 0) > 0 && (fieldState.isTouched || field.value)
+                                            ? 'error'
+                                            : 'success',
+                                    focused: (fieldState.error?.message?.length ?? 0) === 0 && (fieldState.isTouched || !!field.value),
                                     variant: 'standard',
-                                    helperText: isTouched ? errors : '',
-                                    error: (errors?.length ?? 0) > 0 && isTouched,
+                                    helperText: fieldState.error?.message,
+                                    error: (fieldState.error?.message?.length ?? 0) > 0 && (fieldState.isTouched || !!field.value),
                                     InputProps: {
                                         endAdornment: (
                                             <InputAdornment position='end'>

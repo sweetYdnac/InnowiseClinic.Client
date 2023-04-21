@@ -8,21 +8,19 @@ import IAutoCompleteItem from '../types/common/IAutoCompleteItem';
 interface AutoCompleteProps<T> {
     id: string;
     displayName: string;
-    isTouched: boolean | undefined;
-    errors: string | undefined;
     control: Control<any, any>;
     options: IAutoCompleteItem<T>[];
     disabled?: boolean;
 }
 
-const AutoComplete = <T,>({ id, displayName, isTouched, errors, control, options, disabled = false }: AutoCompleteProps<T>) => {
+const AutoComplete = <T,>({ id, displayName, control, options, disabled = false }: AutoCompleteProps<T>) => {
     const [open, setOpen] = useState(false);
 
     return (
         <Controller
             name={id}
             control={control}
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
                 <>
                     <Autocomplete
                         {...field}
@@ -51,11 +49,15 @@ const AutoComplete = <T,>({ id, displayName, isTouched, errors, control, options
                             <TextField
                                 {...params}
                                 label={displayName}
-                                color={(errors?.length ?? 0) > 0 && isTouched ? 'error' : 'success'}
-                                focused={(errors?.length ?? 0) === 0 && isTouched}
+                                color={
+                                    (fieldState.error?.message?.length ?? 0) > 0 && (fieldState.isTouched || field.value)
+                                        ? 'error'
+                                        : 'success'
+                                }
+                                focused={(fieldState.error?.message?.length ?? 0) === 0 && (fieldState.isTouched || !!field.value)}
                                 variant='standard'
-                                helperText={options.length === 0 ? 'No options' : errors}
-                                error={(errors?.length ?? 0) > 0 && isTouched}
+                                helperText={fieldState.error?.message}
+                                error={(fieldState.error?.message?.length ?? 0) > 0 && (fieldState.isTouched || !!field.value)}
                             />
                         )}
                     />
