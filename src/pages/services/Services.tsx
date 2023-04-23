@@ -24,8 +24,8 @@ const Services: FunctionComponent<ServicesProps> = () => {
     const defaultPagingOptions = {
         currentPage: 0,
         pageSize: 1,
-        totalPages: 1,
-        totalCount: 1,
+        totalPages: 0,
+        totalCount: 0,
     };
 
     const [isLoading, setIsLoading] = useState(false);

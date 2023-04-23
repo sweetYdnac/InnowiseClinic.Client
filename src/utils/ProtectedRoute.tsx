@@ -1,4 +1,3 @@
-import jwt from 'jwt-decode';
 import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginMessage } from '../components/Header';
@@ -24,27 +23,19 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
                 eventEmitter.emit(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`);
             } else {
                 await AuthorizationService.refresh().then(() => {
-                    if (AuthorizationService.getAccessToken()) {
+                    if (AuthorizationService.isAuthorized()) {
                         setDisplay(true);
                     }
                 });
             }
         };
 
-        let accessToken = localStorage.getItem('accessToken');
-
-        if (accessToken) {
-            let decoded = jwt<any>(accessToken);
-
-            if (decoded.exp * 1000 < Date.now()) {
-                refresh();
-            } else {
-                setDisplay(true);
-            }
-        } else {
+        if (!AuthorizationService.isAuthorized()) {
             refresh();
+        } else {
+            setDisplay(true);
         }
-    }, [navigate]);
+    }, []);
 
     return <>{display ? children : <Loader isOpen={!display} />}</>;
 };

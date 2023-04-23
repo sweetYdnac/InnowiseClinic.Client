@@ -30,7 +30,15 @@ const getAccessToken = () => {
 };
 
 const isAuthorized = () => {
-    return !!localStorage.getItem('accessToken');
+    const accessToken = localStorage.getItem('accessToken');
+
+    if (accessToken) {
+        const decoded = jwt<any>(accessToken);
+
+        return decoded.exp * 1000 > Date.now();
+    }
+
+    return false;
 };
 
 const signIn = async (data: ILoginRequest) => {
