@@ -1,19 +1,19 @@
 import { Autocomplete, TextField } from '@mui/material';
-import { useState } from 'react';
+import { FunctionComponent, useState } from 'react';
 import { Control, Controller } from 'react-hook-form';
 import { EventType } from '../events/eventTypes';
 import { eventEmitter } from '../events/events';
 import IAutoCompleteItem from '../types/common/IAutoCompleteItem';
 
-interface AutoCompleteProps<T> {
+interface AutoCompleteProps {
     id: string;
     displayName: string;
     control: Control<any, any>;
-    options: IAutoCompleteItem<T>[];
+    options: IAutoCompleteItem[];
     disabled?: boolean;
 }
 
-const AutoComplete = <T,>({ id, displayName, control, options, disabled = false }: AutoCompleteProps<T>) => {
+const AutoComplete: FunctionComponent<AutoCompleteProps> = ({ id, displayName, control, options, disabled = false }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -24,10 +24,10 @@ const AutoComplete = <T,>({ id, displayName, control, options, disabled = false 
                 <>
                     <Autocomplete
                         {...field}
-                        defaultValue={field.value ?? null}
-                        value={field.value ?? null}
-                        onChange={(_e, value: IAutoCompleteItem<T>) => {
-                            field.onChange(value);
+                        defaultValue={options.find((option) => option.id === field.value) || null}
+                        value={options.find((option) => option.id === field.value) || null}
+                        onChange={(_e, value) => {
+                            field.onChange(value?.id ?? null);
                             eventEmitter.emit(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${id}`);
                         }}
                         onInputChange={(_e, value) => {
@@ -39,8 +39,8 @@ const AutoComplete = <T,>({ id, displayName, control, options, disabled = false 
                             eventEmitter.emit(`${EventType.OPEN_AUTOCOMPLETE} ${id}`);
                         }}
                         onClose={() => setOpen(false)}
-                        isOptionEqualToValue={(option, value) => option.value === value.value}
-                        getOptionLabel={(option) => option.label}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                        getOptionLabel={(option: IAutoCompleteItem) => option.label}
                         options={options}
                         disabled={disabled}
                         autoHighlight
@@ -56,7 +56,11 @@ const AutoComplete = <T,>({ id, displayName, control, options, disabled = false 
                                 }
                                 focused={(fieldState.error?.message?.length ?? 0) === 0 && (fieldState.isTouched || !!field.value)}
                                 variant='standard'
-                                helperText={fieldState.error?.message}
+                                helperText={
+                                    (fieldState.error?.message?.length ?? 0) > 0 && (fieldState.isTouched || field.value)
+                                        ? fieldState.error?.message
+                                        : ''
+                                }
                                 error={(fieldState.error?.message?.length ?? 0) > 0 && (fieldState.isTouched || !!field.value)}
                             />
                         )}

@@ -1,5 +1,5 @@
 import { FunctionComponent, useEffect, useState } from 'react';
-import PatientHistory from '../../components/PatientsHistory';
+import PatientHistory from '../../components/PatientHistory';
 import AppointmentsService from '../../services/appointments_api/AppointmentsService';
 import AuthorizationService from '../../services/authorization_api/AuthorizationService';
 import IGetPatientHistoryRequest from '../../types/appointments_api/requests/IGetPatientHistoryRequest';

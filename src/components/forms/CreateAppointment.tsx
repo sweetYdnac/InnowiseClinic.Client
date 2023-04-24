@@ -33,11 +33,12 @@ import Datepicker from '../CustomDatePicker';
 import CustomDialog from '../CustomDialog';
 import { PopupData } from '../Popup';
 import TimePicker from '../TimePicker';
+
 const validationSchema = yup.object().shape({
-    office: yup.mixed<IAutoCompleteItem<IOfficeInformationResponse>>().required('Please, choose the office'),
-    doctor: yup.mixed<IAutoCompleteItem<IDoctorInformationResponse>>().required('Please, choose the doctor'),
-    specialization: yup.mixed<IAutoCompleteItem<ISpecializationResponse>>().required('Please, choose the specialization'),
-    service: yup.mixed<IAutoCompleteItem<IServiceInformationResponse>>().required('Please, choose the service'),
+    officeId: yup.mixed<string>().required('Please, choose the office'),
+    doctorId: yup.mixed<string>().required('Please, choose the doctor'),
+    specializationId: yup.mixed<string>().required('Please, choose the specialization'),
+    serviceId: yup.mixed<string>().required('Please, choose the service'),
     date: yup.date().required('Please, enter a valid date').typeError('Please, enter a valid date'),
     time: yup.mixed<ITimeSlot>().required('Please, enter a valid timeslot'),
 });
@@ -50,10 +51,10 @@ interface CreateAppointmentProps {
 const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalName, dto }: CreateAppointmentProps) => {
     const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
     const [options, setOptions] = useState({
-        offices: [] as IAutoCompleteItem<IOfficeInformationResponse>[],
-        specializations: [] as IAutoCompleteItem<ISpecializationResponse>[],
-        doctors: [] as IAutoCompleteItem<IDoctorInformationResponse>[],
-        services: [] as IAutoCompleteItem<IServiceInformationResponse>[],
+        offices: [] as IOfficeInformationResponse[],
+        specializations: [] as ISpecializationResponse[],
+        doctors: [] as IDoctorInformationResponse[],
+        services: [] as IServiceInformationResponse[],
     });
     const [timeSlots, setTimeSlots] = useState<ITimeSlot[]>([]);
 
@@ -70,38 +71,10 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
         resolver: yupResolver(validationSchema),
         defaultValues: async () => {
             return {
-                office: dto
-                    ? {
-                          label: dto.officeAddress,
-                          item: {
-                              id: dto.officeId,
-                              address: dto.officeAddress,
-                          },
-                      }
-                    : null,
-                doctor: dto
-                    ? {
-                          label: dto.doctorFullName,
-                          item: {
-                              id: dto.doctorId,
-                              fullName: dto.doctorFullName,
-                              specializationId: dto.specializationId,
-                              specializationName: dto.specializationName,
-                              officeId: dto.officeId,
-                              officeAddress: dto.officeAddress,
-                          },
-                      }
-                    : null,
-                specialization: dto
-                    ? {
-                          label: dto.specializationName,
-                          item: {
-                              id: dto.specializationId,
-                              title: dto.specializationName,
-                          },
-                      }
-                    : null,
-                service: null,
+                officeId: dto ? dto.officeId : null,
+                doctorId: dto ? dto.doctorId : null,
+                specializationId: dto ? dto.specializationId : null,
+                serviceId: null,
                 date: dayjs(),
                 time: null,
             } as ICreateAppointmentForm;
@@ -112,18 +85,21 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
         try {
             let patient = await PatientsService.getById(AuthorizationService.getAccountId());
 
+            const doctor = options.doctors.find((item) => item.id === data.doctorId);
+            const service = options.services.find((item) => item.id === data.serviceId);
+
             let request = {
                 patientId: AuthorizationService.getAccountId(),
                 patientFullName: `${patient.firstName} ${patient.lastName} ${patient.middleName}`,
                 patientPhoneNumber: patient.phoneNumber,
                 patientDateOfBirth: patient.dateOfBirth.format('YYYY-MM-DD'),
-                doctorId: data.doctor?.item.id,
-                doctorFullName: data.doctor?.item.fullName,
-                doctorSpecializationName: data.doctor?.item.specializationName,
-                serviceId: data.service?.item.id,
-                serviceName: data.service?.item.title,
-                duration: data.service?.item.duration,
-                officeId: data.office?.item.id,
+                doctorId: data.doctorId,
+                doctorFullName: doctor?.fullName,
+                doctorSpecializationName: doctor?.specializationName,
+                serviceId: data.serviceId,
+                serviceName: service?.title,
+                duration: service?.duration,
+                officeId: data.officeId,
                 date: dayjs(data.date).format('YYYY-MM-DD'),
                 time: dayjs(data.time?.parsedTime).format('HH:mm:ss'),
             } as ICreateAppointmentRequest;
@@ -137,13 +113,13 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
             eventEmitter.emit(`${EventType.CLOSE_MODAL} ${modalName}`);
         } catch (error) {
             if (error instanceof AxiosError && error.response?.status === 400) {
-                setError('office', {
+                setError('officeId', {
                     message: error.response.data.errors?.OfficeId?.[0] || error.response.data.Message || '',
                 });
-                setError('specialization', {
+                setError('specializationId', {
                     message: error.response.data.errors?.DoctorSpecializationName?.[0] || error.response.data.Message || '',
                 });
-                setError('doctor', {
+                setError('doctorId', {
                     message:
                         error.response.data.errors?.DoctorId?.[0] ||
                         error.response.data.errors?.DoctorFullName?.[0] ||
@@ -151,7 +127,7 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                         error.response.data.Message ||
                         '',
                 });
-                setError('service', {
+                setError('serviceId', {
                     message:
                         error.response.data.errors?.ServiceId?.[0] ||
                         error.response.data.errors?.ServiceName?.[0] ||
@@ -188,7 +164,7 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
 
     const watchService = useWatch({
         control,
-        name: 'service',
+        name: 'serviceId',
     });
     useEffect(() => {
         setValue('time', null, { shouldValidate: true });
@@ -203,53 +179,68 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
     }, [watchDate, setValue]);
 
     useEffect(() => {
-        if ((options.doctors.length > 0 || getValues('doctor')) && watchService !== null && watchDate !== null && watchDate.isValid()) {
-            const request = async () => {
-                let data = {
-                    date: getValues('date').format('YYYY-MM-DD'),
-                    doctors: getValues('doctor') ? getValues('doctor')?.item.id : options.doctors.map((combobox) => combobox.item.id),
-                    duration: getValues('service')?.item.duration ?? 30,
-                    startTime: '08:00',
-                    endTime: '18:00',
-                } as IGetTimeSlotsRequest;
-
-                let response = await AppointmentsService.getTimeSlots(data);
-                setTimeSlots(response.timeSlots);
-            };
-
+        console.log('remove timeslots');
+        if (options.doctors.length === 0 || !getValues('doctorId') || watchService === null || watchDate === null || !watchDate.isValid()) {
             setValue('time', null);
-            request();
-        } else {
             setTimeSlots([]);
         }
-    }, [options.doctors, watchService, watchDate, setValue, getValues]);
+    }, [options.doctors, watchDate, watchService]);
 
     useEffect(() => {
         const openCancelDialog = () => setIsCancelDialogOpen(true);
         const closeCancelDialog = () => setIsCancelDialogOpen(false);
 
+        const handleOpenTimePicker = async () => {
+            if (
+                (options.doctors.length > 0 || getValues('doctorId')) &&
+                watchService !== null &&
+                watchDate !== null &&
+                watchDate.isValid()
+            ) {
+                const request = async () => {
+                    let data = {
+                        date: getValues('date').format('YYYY-MM-DD'),
+                        doctors: getValues('doctorId') ? getValues('doctorId') : options.doctors.map((item) => item.id),
+                        duration: options.services.find((item) => item.id === getValues('serviceId'))?.duration ?? 30,
+                        startTime: '08:00',
+                        endTime: '18:00',
+                    } as IGetTimeSlotsRequest;
+
+                    let response = await AppointmentsService.getTimeSlots(data);
+                    setTimeSlots(response.timeSlots);
+                };
+
+                setValue('time', null);
+                request();
+            } else {
+                setTimeSlots([]);
+            }
+        };
+
+        const hangleTimeSlotChange = (doctorsId: string[]) => {
+            setOptions({
+                ...options,
+                doctors: options.doctors.filter((item) => doctorsId.some((id) => item.id === id)),
+            });
+        };
+
         const setDoctorsFromTimeSlot = (data: ITimeSlot) =>
             setOptions({
                 ...options,
-                doctors: options.doctors.filter((combobox) => data.doctorsId.some((id) => id === combobox.item.id)),
+                doctors: options.doctors.filter((item) => data.doctors.some((id) => id === item.id)),
             });
 
         const getOffices = async () => {
-            let data = {
+            const data = {
                 currentPage: 1,
                 pageSize: 50,
             } as IGetPagedOfficesRequest;
 
-            let offices = (await OfficesService.getPaged(data)).items;
+            const offices = (await OfficesService.getPaged(data)).items;
 
             setOptions({
                 ...options,
-                offices: offices.map((item) => {
-                    return {
-                        label: item.address,
-                        item: item,
-                    } as IAutoCompleteItem<IOfficeInformationResponse>;
-                }),
+                offices: offices,
             });
         };
 
@@ -265,104 +256,87 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
 
             setOptions({
                 ...options,
-                specializations: specializations.map((item) => {
-                    return {
-                        label: item.title,
-                        item: item,
-                    } as IAutoCompleteItem<ISpecializationResponse>;
-                }),
+                specializations: specializations,
             });
         };
 
         const onSpecializationChange = async () => {
-            let specialization = getValues('specialization')?.item;
+            const specialization = options.specializations.find((item) => item.id === getValues('specializationId'));
 
             if (!specialization) {
-                setValue('service', null, { shouldValidate: true });
-                setValue('doctor', null, { shouldValidate: true });
+                setValue('serviceId', null, { shouldValidate: true });
+                setValue('doctorId', null, { shouldValidate: true });
             }
         };
 
         const getDoctors = async (value = '') => {
-            let data = {
+            if (getValues('time') !== null) {
+                return;
+            }
+
+            const data = {
                 currentPage: 1,
                 pageSize: 50,
                 onlyAtWork: true,
-                officeId: getValues('office')?.item.id ?? '',
-                specializationId: getValues('specialization')?.item.id ?? '',
+                officeId: getValues('officeId') ?? '',
+                specializationId: getValues('specializationId') ?? '',
                 fullName: value,
             } as IGetPagedDoctorsRequest;
 
-            let doctors = (await DoctorsService.getPaged(data)).items;
+            const doctors = (await DoctorsService.getPaged(data)).items;
 
             setOptions({
                 ...options,
-                doctors: doctors.map((item) => {
-                    return {
-                        label: item.fullName,
-                        item: item,
-                    } as IAutoCompleteItem<IDoctorInformationResponse>;
-                }),
+                doctors: doctors,
             });
         };
 
         const onDoctorChange = async () => {
-            let doctor = getValues('doctor')?.item;
+            const doctor = options.doctors.find((item) => item.id === getValues('doctorId'));
 
-            if (doctor?.specializationId) {
-                let specialization = await SpecializationsService.getById(doctor?.specializationId);
+            if (doctor?.specializationId && getValues('specializationId') === null) {
+                const specialization = await SpecializationsService.getById(doctor?.specializationId);
 
-                setValue(
-                    'specialization',
-                    {
-                        label: specialization.title,
-                        item: specialization,
-                    } as IAutoCompleteItem<ISpecializationResponse>,
-                    { shouldTouch: true }
-                );
+                setOptions({
+                    ...options,
+                    specializations: [specialization],
+                });
+                setValue('specializationId', specialization.id, { shouldTouch: true, shouldValidate: true });
             }
         };
 
         const getServices = async (value = '') => {
-            let data = {
+            const data = {
                 currentPage: 1,
                 pageSize: 50,
                 isActive: true,
-                specializationId: getValues('specialization')?.item.id ?? '',
+                specializationId: getValues('specializationId') ?? '',
                 title: value,
             } as IGetPagedServicesRequest;
 
-            let services = (await ServicesService.getPaged(data)).items;
+            const services = (await ServicesService.getPaged(data)).items;
 
             setOptions({
                 ...options,
-                services: services.map((item) => {
-                    return {
-                        label: item.title,
-                        item: item,
-                    } as IAutoCompleteItem<IServiceInformationResponse>;
-                }),
+                services: services,
             });
         };
 
         const onServiceChange = async () => {
-            let service = getValues('service')?.item;
+            const service = options.services.find((item) => item.id === getValues('serviceId'));
 
             if (!service) {
                 await getServices();
                 setValue('time', null);
             } else {
-                if (service?.specializationId && getValues('specialization') === null) {
-                    let specialization = await SpecializationsService.getById(service?.specializationId);
+                if (service?.specializationId && getValues('specializationId') === null) {
+                    const specialization = await SpecializationsService.getById(service?.specializationId);
 
-                    setValue(
-                        'specialization',
-                        {
-                            label: specialization.title,
-                            item: specialization,
-                        } as IAutoCompleteItem<ISpecializationResponse>,
-                        { shouldTouch: true }
-                    );
+                    setOptions({
+                        ...options,
+                        specializations: [specialization],
+                    });
+                    setValue('specializationId', specialization.id, { shouldTouch: true, shouldValidate: true });
                 }
             }
         };
@@ -371,43 +345,49 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
         eventEmitter.addListener(`${EventType.DECLINE_DIALOG} ${modalName}`, closeCancelDialog);
         eventEmitter.addListener(`${EventType.ENTER_TIMESLOT}`, setDoctorsFromTimeSlot);
 
-        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('office').name}`, getOffices);
+        eventEmitter.addListener(`${EventType.OPEN_TIMEPICKER} ${register('time').name}`, handleOpenTimePicker);
+        eventEmitter.addListener(`${EventType.TIMEPICKER_VALUE_CHANGE} ${register('time').name}`, hangleTimeSlotChange);
 
-        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specialization').name}`, getSpecializations);
-        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specialization').name}`, getSpecializations);
-        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('specialization').name}`, onSpecializationChange);
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('officeId').name}`, getOffices);
 
-        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('doctor').name}`, getDoctors);
-        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('doctor').name}`, getDoctors);
-        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('doctor').name}`, onDoctorChange);
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specializationId').name}`, getSpecializations);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specializationId').name}`, getSpecializations);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('specializationId').name}`, onSpecializationChange);
 
-        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('service').name}`, getServices);
-        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('service').name}`, getServices);
-        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('service').name}`, onServiceChange);
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('doctorId').name}`, getDoctors);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('doctorId').name}`, getDoctors);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('doctorId').name}`, onDoctorChange);
+
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('serviceId').name}`, getServices);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('serviceId').name}`, getServices);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('serviceId').name}`, onServiceChange);
 
         return () => {
             eventEmitter.removeListener(`${EventType.CLICK_CLOSE_MODAL} ${modalName}`, openCancelDialog);
             eventEmitter.removeListener(`${EventType.DECLINE_DIALOG} ${modalName}`, closeCancelDialog);
             eventEmitter.removeListener(`${EventType.ENTER_TIMESLOT}`, setDoctorsFromTimeSlot);
 
-            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('office').name}`, getOffices);
+            eventEmitter.removeListener(`${EventType.OPEN_TIMEPICKER} ${register('time').name}`, handleOpenTimePicker);
+            eventEmitter.removeListener(`${EventType.TIMEPICKER_VALUE_CHANGE} ${register('time').name}`, hangleTimeSlotChange);
 
-            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specialization').name}`, getSpecializations);
-            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specialization').name}`, getSpecializations);
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('officeId').name}`, getOffices);
+
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specializationId').name}`, getSpecializations);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specializationId').name}`, getSpecializations);
             eventEmitter.removeListener(
-                `${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('specialization').name}`,
+                `${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('specializationId').name}`,
                 onSpecializationChange
             );
 
-            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('doctor').name}`, getDoctors);
-            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('doctor').name}`, getDoctors);
-            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('doctor').name}`, onDoctorChange);
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('doctorId').name}`, getDoctors);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('doctorId').name}`, getDoctors);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('doctorId').name}`, onDoctorChange);
 
-            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('service').name}`, getServices);
-            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('service').name}`, getServices);
-            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('service').name}`, onServiceChange);
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('serviceId').name}`, getServices);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('serviceId').name}`, getServices);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_VALUE_CHANGE} ${register('serviceId').name}`, onServiceChange);
         };
-    }, [getValues, modalName, options, register, setValue]);
+    }, [getValues, modalName, options, register, setValue, timeSlots, watchDate, watchService]);
 
     return (
         <>
@@ -428,35 +408,60 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                     Create Appointment
                 </Typography>
 
-                <AutoComplete id={register('office').name} displayName='Office' control={control} options={options.offices} />
+                <AutoComplete
+                    id={register('officeId').name}
+                    displayName='Office'
+                    control={control}
+                    options={options.offices.map((item) => {
+                        return {
+                            label: item.address,
+                            id: item.id,
+                        } as IAutoCompleteItem;
+                    })}
+                />
 
                 <AutoComplete
-                    disabled={getValues('office') === null}
-                    id={register('specialization').name}
+                    disabled={!getValues('officeId')}
+                    id={register('specializationId').name}
                     displayName='Specialization'
                     control={control}
-                    options={options.specializations}
+                    options={options.specializations.map((item) => {
+                        return {
+                            label: item.title,
+                            id: item.id,
+                        } as IAutoCompleteItem;
+                    })}
                 />
 
                 <AutoComplete
-                    disabled={getValues('office') === null}
-                    id={register('doctor').name}
+                    disabled={!getValues('officeId')}
+                    id={register('doctorId').name}
                     displayName='Doctor'
                     control={control}
-                    options={options.doctors}
+                    options={options.doctors.map((item) => {
+                        return {
+                            label: item.fullName,
+                            id: item.id,
+                        } as IAutoCompleteItem;
+                    })}
                 />
 
                 <AutoComplete
-                    disabled={getValues('office') === null}
-                    id={register('service').name}
+                    disabled={!getValues('officeId')}
+                    id={register('serviceId').name}
                     displayName='Service'
                     control={control}
-                    options={options.services}
+                    options={options.services.map((item) => {
+                        return {
+                            label: item.title,
+                            id: item.id,
+                        } as IAutoCompleteItem;
+                    })}
                 />
 
                 <Datepicker
-                    readOnly={(options.doctors.length === 0 || !getValues('doctor')) && getValues('service') === null}
-                    disabled={(options.doctors.length === 0 || !getValues('doctor')) && getValues('service') === null}
+                    readOnly={(options.doctors.length === 0 || !getValues('doctorId')) && !getValues('serviceId')}
+                    disabled={(options.doctors.length === 0 || !getValues('doctorId')) && !getValues('serviceId')}
                     id={register('date').name}
                     displayName='Date'
                     control={control}
@@ -468,12 +473,14 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
 
                 <TimePicker
                     readOnly={
-                        (options.doctors.length === 0 || getValues('doctor') === null) &&
-                        (getValues('service') === null || !getValues('date')?.isValid())
+                        (options.doctors.length === 0 && getValues('doctorId') === null) ||
+                        getValues('serviceId') === null ||
+                        !getValues('date')?.isValid()
                     }
                     disabled={
-                        (options.doctors.length === 0 || getValues('doctor') === null) &&
-                        (getValues('service') === null || !getValues('date')?.isValid())
+                        (options.doctors.length === 0 && getValues('doctorId') === null) ||
+                        getValues('serviceId') === null ||
+                        !getValues('date')?.isValid()
                     }
                     id={register('time').name}
                     displayName='Time slot'
@@ -486,16 +493,16 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                     variant='contained'
                     color='success'
                     disabled={
-                        (errors.office?.message?.length ?? 0) > 0 ||
-                        (errors.specialization?.message?.length ?? 0) > 0 ||
-                        (errors.doctor?.message?.length ?? 0) > 0 ||
-                        (errors.service?.message?.length ?? 0) > 0 ||
+                        (errors.officeId?.message?.length ?? 0) > 0 ||
+                        (errors.specializationId?.message?.length ?? 0) > 0 ||
+                        (errors.doctorId?.message?.length ?? 0) > 0 ||
+                        (errors.serviceId?.message?.length ?? 0) > 0 ||
                         (errors.date?.message?.length ?? 0) > 0 ||
                         (errors.time?.message?.length ?? 0) > 0 ||
-                        (!touchedFields.office && !getValues('office')) ||
-                        (!touchedFields.specialization && !getValues('specialization')) ||
-                        (!touchedFields.doctor && !getValues('doctor')) ||
-                        (!touchedFields.service && !getValues('service')) ||
+                        (!touchedFields.officeId && !getValues('officeId')) ||
+                        (!touchedFields.specializationId && !getValues('specializationId')) ||
+                        (!touchedFields.doctorId && !getValues('doctorId')) ||
+                        (!touchedFields.serviceId && !getValues('serviceId')) ||
                         (!touchedFields.date && !getValues('date')) ||
                         (!touchedFields.time && !getValues('time'))
                     }

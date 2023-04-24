@@ -5,6 +5,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { FunctionComponent } from 'react';
 import { Control, Controller } from 'react-hook-form';
+import { EventType } from '../events/eventTypes';
+import { eventEmitter } from '../events/events';
 import ITimeSlot from '../types/appointments_api/ITimeSlot';
 
 interface TimePickerProps {
@@ -27,6 +29,7 @@ const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id
                     <>
                         <MobileTimePicker
                             {...field}
+                            onOpen={() => eventEmitter.emit(`${EventType.OPEN_TIMEPICKER} ${id}`)}
                             disabled={disabled}
                             readOnly={readOnly}
                             label={displayName}
@@ -46,7 +49,13 @@ const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id
                             defaultValue={field?.value?.parsedTime ?? null}
                             value={field?.value?.parsedTime ?? null}
                             onChange={(date) => field.onChange(timeSlots.find((slot) => slot.time === date?.format('HH:mm')))}
-                            onAccept={() => field.onBlur()}
+                            onAccept={(date) => {
+                                field.onBlur();
+                                eventEmitter.emit(
+                                    `${EventType.TIMEPICKER_VALUE_CHANGE} ${id}`,
+                                    timeSlots.find((slot) => slot.time === date?.format('HH:mm'))?.doctors
+                                );
+                            }}
                             onSelectedSectionsChange={() => field.onBlur()}
                             slotProps={{
                                 textField: {

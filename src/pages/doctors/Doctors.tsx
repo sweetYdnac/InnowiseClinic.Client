@@ -42,8 +42,8 @@ const Doctors: FunctionComponent<DoctorsProps> = () => {
     const { page } = useParams();
     const [isLoading, setIsLoading] = useState(false);
     const [options, setOptions] = useState({
-        offices: [] as IAutoCompleteItem<IOfficeInformationResponse>[],
-        specializations: [] as IAutoCompleteItem<ISpecializationResponse>[],
+        offices: [] as IOfficeInformationResponse[],
+        specializations: [] as ISpecializationResponse[],
         doctors: [] as ICard<IDoctorInformationDTO>[],
     });
     const [pagination, setPagination] = useState<IPagination>({
@@ -58,9 +58,9 @@ const Doctors: FunctionComponent<DoctorsProps> = () => {
         resolver: yupResolver(validationSchema),
         defaultValues: async () => {
             return {
-                office: null,
-                specialization: null,
-                doctor: '',
+                officeId: null,
+                specializationId: null,
+                doctor: null,
             } as IGetPagedDoctorsForm;
         },
     });
@@ -74,9 +74,9 @@ const Doctors: FunctionComponent<DoctorsProps> = () => {
                 currentPage: page,
                 pageSize: pagination?.pageSize,
                 onlyAtWork: true,
-                officeId: data.office?.item.id ?? '',
-                specializationId: data.specialization?.item.id ?? '',
-                fullName: data.doctor,
+                officeId: data.officeId ?? '',
+                specializationId: data.specializationId ?? '',
+                fullName: data.doctor ?? '',
             } as IGetPagedDoctorsRequest;
 
             try {
@@ -89,7 +89,7 @@ const Doctors: FunctionComponent<DoctorsProps> = () => {
                     ...options,
                     doctors: await Promise.all(
                         items.map(async (item) => {
-                            let photo = await PhotosService.getById(item.photoId);
+                            const photo = item.photoId ? await PhotosService.getById(item.photoId) : '';
 
                             return {
                                 id: item.id,
@@ -137,21 +137,16 @@ const Doctors: FunctionComponent<DoctorsProps> = () => {
 
     useEffect(() => {
         const getOffices = async () => {
-            let data = {
+            const data = {
                 currentPage: 1,
                 pageSize: 50,
             } as IGetPagedOfficesRequest;
 
-            let offices = (await OfficesService.getPaged(data)).items;
+            const offices = (await OfficesService.getPaged(data)).items;
 
             setOptions({
                 ...options,
-                offices: offices.map((item) => {
-                    return {
-                        label: item.address,
-                        item: item,
-                    } as IAutoCompleteItem<IOfficeInformationResponse>;
-                }),
+                offices: offices,
             });
         };
         const getSpecializations = async (value = '') => {
@@ -166,23 +161,18 @@ const Doctors: FunctionComponent<DoctorsProps> = () => {
 
             setOptions({
                 ...options,
-                specializations: specializations.map((item) => {
-                    return {
-                        label: item.title,
-                        item: item,
-                    } as IAutoCompleteItem<ISpecializationResponse>;
-                }),
+                specializations: specializations,
             });
         };
 
-        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('office').name}`, getOffices);
-        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specialization').name}`, getSpecializations);
-        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specialization').name}`, getSpecializations);
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('officeId').name}`, getOffices);
+        eventEmitter.addListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specializationId').name}`, getSpecializations);
+        eventEmitter.addListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specializationId').name}`, getSpecializations);
 
         return () => {
-            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('office').name}`, getOffices);
-            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specialization').name}`, getSpecializations);
-            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specialization').name}`, getSpecializations);
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('officeId').name}`, getOffices);
+            eventEmitter.removeListener(`${EventType.OPEN_AUTOCOMPLETE} ${register('specializationId').name}`, getSpecializations);
+            eventEmitter.removeListener(`${EventType.AUTOCOMPLETE_INPUT_CHANGE} ${register('specializationId').name}`, getSpecializations);
         };
     }, [getValues, options, register, setValue]);
 
@@ -202,12 +192,27 @@ const Doctors: FunctionComponent<DoctorsProps> = () => {
                     displayName='Doctor name'
                     inputMode='text'
                 />
-                <AutoComplete id={register('office').name} displayName='Office' control={control} options={options.offices} />
                 <AutoComplete
-                    id={register('specialization').name}
+                    id={register('officeId').name}
+                    displayName='Office'
+                    control={control}
+                    options={options.offices.map((item) => {
+                        return {
+                            label: item.address,
+                            id: item.id,
+                        } as IAutoCompleteItem;
+                    })}
+                />
+                <AutoComplete
+                    id={register('specializationId').name}
                     displayName='Specialization'
                     control={control}
-                    options={options.specializations}
+                    options={options.specializations.map((item) => {
+                        return {
+                            label: item.title,
+                            id: item.id,
+                        } as IAutoCompleteItem;
+                    })}
                 />
             </Box>
             <Box>

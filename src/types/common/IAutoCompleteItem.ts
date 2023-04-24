@@ -1,4 +1,4 @@
-export default interface IAutoCompleteItem<T> {
+export default interface IAutoCompleteItem {
     label: string;
-    item: T;
+    id: string;
 }
