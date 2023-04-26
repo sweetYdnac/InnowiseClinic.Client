@@ -10,7 +10,6 @@ import { EventType } from '../../events/eventTypes';
 import { eventEmitter } from '../../events/events';
 import AppointmentsService from '../../services/appointments_api/AppointmentsService';
 import DoctorsService from '../../services/profiles_api/DoctorsService';
-import IRescheduledAppointmentDTO from '../../types/appointments_api/IRescheduledAppointmentDTO';
 import ITimeSlot from '../../types/appointments_api/ITimeSlot';
 import IRescheduleAppointmentForm from '../../types/appointments_api/forms/IRescheduleAppointmentForm';
 import IGetTimeSlotsRequest from '../../types/appointments_api/requests/IGetTimeSlotsRequest';
@@ -89,15 +88,7 @@ const RescheduleAppointment: FunctionComponent<RescheduleAppointmentProps> = ({ 
                 } as PopupData)
             );
 
-            const dto = {
-                id: id,
-                date: data.date,
-                startTime: data.time,
-                endTime: data.time?.add(appointmentData?.duration ?? 30, 'minutes'),
-                doctorFullName: doctor?.fullName,
-            } as IRescheduledAppointmentDTO;
-
-            eventEmitter.emit(`${EventType.CLOSE_MODAL} ${ModalNames.RescheduleAppointment}`, dto);
+            eventEmitter.emit(`${EventType.CLOSE_MODAL} ${ModalNames.RescheduleAppointment}`);
         } catch (error) {
             if (error instanceof AxiosError && error.response?.status === 400) {
                 setError('doctorId', {

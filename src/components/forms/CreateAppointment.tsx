@@ -1,5 +1,5 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { FunctionComponent, useEffect, useState } from 'react';
@@ -32,9 +32,8 @@ import AutoComplete from '../AutoComplete';
 import Datepicker from '../CustomDatePicker';
 import CustomDialog from '../CustomDialog';
 import { PopupData } from '../Popup';
-import TimePicker from '../TimePicker';
 import SubmitButton from '../SubmitButton';
-import IAppointmentHistoryResponse from '../../types/appointments_api/responses/IAppointmentHistoryResponse';
+import TimePicker from '../TimePicker';
 
 const validationSchema = yup.object().shape({
     officeId: yup.mixed<string>().required('Please, choose the office'),
@@ -113,18 +112,7 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                     color: 'success',
                 } as PopupData);
 
-                const dto = {
-                    id: response.id,
-                    date: data.date,
-                    startTime: data.time,
-                    endTime: dayjs(data.time).add(request.duration, 'minutes'),
-                    doctorFullName: request.doctorFullName,
-                    serviceName: request.serviceName,
-                    resultId: null,
-                    isApproved: false,
-                } as IAppointmentHistoryResponse;
-
-                eventEmitter.emit(`${EventType.CLOSE_MODAL} ${modalName}`, dto);
+                eventEmitter.emit(`${EventType.CLOSE_MODAL} ${modalName}`);
             });
         } catch (error) {
             if (error instanceof AxiosError && error.response?.status === 400) {

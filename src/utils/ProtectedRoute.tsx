@@ -16,7 +16,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
     useEffect(() => {
         const refresh = async () => {
-            let refreshToken = localStorage.getItem('refreshToken');
+            const refreshToken = localStorage.getItem('refreshToken');
 
             if (!refreshToken) {
                 navigate('/');
@@ -35,7 +35,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         } else {
             setDisplay(true);
         }
-    }, []);
+    }, [navigate]);
 
     return <>{display ? children : <Loader isOpen={!display} />}</>;
 };

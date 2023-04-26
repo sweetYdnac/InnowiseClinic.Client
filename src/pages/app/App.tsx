@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '../../utils/ProtectedRoute';
+import AppointmentResult from '../appointments/AppointmentResult';
 import DoctorInformation from '../doctors/DoctorInformation';
 import Doctors from '../doctors/Doctors';
 import Home from '../home/Home';
@@ -29,7 +30,7 @@ function App() {
                     }
                 ></Route>
                 <Route
-                    path='/doctor/:id?'
+                    path='/doctors/:id'
                     element={
                         <ProtectedRoute>
                             <DoctorInformation />
@@ -41,6 +42,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <Services />
+                        </ProtectedRoute>
+                    }
+                ></Route>
+                <Route
+                    path='/appointments/results/:id'
+                    element={
+                        <ProtectedRoute>
+                            <AppointmentResult />
                         </ProtectedRoute>
                     }
                 ></Route>

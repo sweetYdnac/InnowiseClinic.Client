@@ -1,7 +1,7 @@
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { Tab } from '@mui/material';
 import { AxiosError } from 'axios';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Loader from '../../components/Loader';
 import { PopupData } from '../../components/Popup';
@@ -13,6 +13,7 @@ import PhotosService from '../../services/documents_api/PhotosService';
 import PatientsService from '../../services/profiles_api/PatientsService';
 import IGetPatientHistoryRequest from '../../types/appointments_api/requests/IGetPatientHistoryRequest';
 import IAppointmentHistoryResponse from '../../types/appointments_api/responses/IAppointmentHistoryResponse';
+import { ModalNames } from '../../types/common/ModalNames';
 import IPagedResponse from '../../types/common/responses/IPagedResponse';
 import IUpdateProfileForm from '../../types/profiles_api/patients/IUpdatePatientProfileForm';
 import PatientHistory from './PatientHistory';
@@ -36,28 +37,34 @@ const PatientProfile = () => {
     } as IPagedResponse<IAppointmentHistoryResponse>);
     const navigate = useNavigate();
 
-    const handleError = (error: any) => {
-        navigate('/');
-        if (error instanceof AxiosError && error.status === 400) {
-            eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
-                message: 'Unknown error occurred',
-            } as PopupData);
-        }
-    };
+    const handleError = useCallback(
+        (error: any) => {
+            navigate('/');
+            if (error instanceof AxiosError && error.status === 400) {
+                eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
+                    message: 'Unknown error occurred',
+                } as PopupData);
+            }
+        },
+        [navigate]
+    );
 
-    const getAppointments = async (page: number = 1) => {
-        const request = {
-            currentPage: page,
-            pageSize: appointments.pageSize,
-        } as IGetPatientHistoryRequest;
+    const getAppointments = useCallback(
+        async (page: number = 1) => {
+            const request = {
+                currentPage: page,
+                pageSize: appointments.pageSize,
+            } as IGetPatientHistoryRequest;
 
-        try {
-            const response = await AppointmentsService.getPatientHistory(AuthorizationService.getAccountId(), request);
-            setAppointments(response);
-        } catch (error) {
-            handleError(error);
-        }
-    };
+            try {
+                const response = await AppointmentsService.getPatientHistory(AuthorizationService.getAccountId(), request);
+                setAppointments(response);
+            } catch (error) {
+                handleError(error);
+            }
+        },
+        [appointments.pageSize, handleError]
+    );
 
     const handleChangeTab = (e: React.SyntheticEvent<Element, Event>, value: PatientProfileTab) => {
         setActiveTab(value);
@@ -89,6 +96,16 @@ const PatientProfile = () => {
 
         getProfile();
     }, []);
+
+    useEffect(() => {
+        eventEmitter.addListener(`${EventType.CLOSE_MODAL} ${ModalNames.RescheduleAppointment}`, getAppointments);
+        eventEmitter.addListener(`${EventType.CLOSE_MODAL} ${ModalNames.CreateAppointment}`, getAppointments);
+
+        return () => {
+            eventEmitter.removeListener(`${EventType.CLOSE_MODAL} ${ModalNames.RescheduleAppointment}`, getAppointments);
+            eventEmitter.removeListener(`${EventType.CLOSE_MODAL} ${ModalNames.CreateAppointment}`, getAppointments);
+        };
+    }, [getAppointments]);
 
     return (
         <TabContext value={activeTab}>

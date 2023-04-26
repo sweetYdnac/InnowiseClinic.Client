@@ -6,7 +6,6 @@ import CustomizedModal from '../../components/customizedModal/CustomizedModal';
 import RescheduleAppointment from '../../components/forms/RescheduleAppointment';
 import { EventType } from '../../events/eventTypes';
 import { eventEmitter } from '../../events/events';
-import IRescheduledAppointmentDTO from '../../types/appointments_api/IRescheduledAppointmentDTO';
 import IAppointmentHistoryResponse from '../../types/appointments_api/responses/IAppointmentHistoryResponse';
 import { ModalNames } from '../../types/common/ModalNames';
 import IPagedResponse from '../../types/common/responses/IPagedResponse';
@@ -26,71 +25,10 @@ const PatientHistory: FunctionComponent<PatientHistoryProps> = ({ appointments, 
             setRescheduleAppointmentId(null);
         };
 
-        const updateAppointment = (data: IRescheduledAppointmentDTO) => {
-            setRescheduleAppointmentId(null);
-            setAppointments((prev) => {
-                const updatedItems = prev.items
-                    .map((item) => {
-                        if (item.id === data.id) {
-                            return {
-                                ...item,
-                                date: data.date,
-                                startTime: data.startTime,
-                                endTime: data.endTime,
-                                doctorFullName: data.doctorFullName,
-                            };
-                        }
-                        return item;
-                    })
-                    .sort((a, b) => {
-                        if (dayjs(a.date).isBefore(b.date)) {
-                            return 1;
-                        } else if (dayjs(a.date).isAfter(b.date)) {
-                            return -1;
-                        } else {
-                            if (dayjs(a.startTime).isBefore(b.startTime)) {
-                                return -1;
-                            } else if (dayjs(a.startTime).isAfter(b.startTime)) {
-                                return 1;
-                            }
-                            return 0;
-                        }
-                    });
-
-                return { ...prev, items: updatedItems };
-            });
-        };
-
-        const addAppointment = (appointment: IAppointmentHistoryResponse) => {
-            setAppointments((prev) => {
-                return {
-                    ...prev,
-                    items: [...prev.items, appointment].sort((a, b) => {
-                        if (dayjs(a.date).isBefore(b.date)) {
-                            return 1;
-                        } else if (dayjs(a.date).isAfter(b.date)) {
-                            return -1;
-                        } else {
-                            if (dayjs(a.startTime).isBefore(b.startTime)) {
-                                return -1;
-                            } else if (dayjs(a.startTime).isAfter(b.startTime)) {
-                                return 1;
-                            }
-                            return 0;
-                        }
-                    }),
-                };
-            });
-        };
-
         eventEmitter.addListener(`${EventType.SUBMIT_DIALOG} ${ModalNames.RescheduleAppointment}`, closeRescheduleAppointmentModel);
-        eventEmitter.addListener(`${EventType.CLOSE_MODAL} ${ModalNames.RescheduleAppointment}`, updateAppointment);
-        eventEmitter.addListener(`${EventType.CLOSE_MODAL} ${ModalNames.CreateAppointment}`, addAppointment);
 
         return () => {
             eventEmitter.removeListener(`${EventType.SUBMIT_DIALOG} ${ModalNames.RescheduleAppointment}`, closeRescheduleAppointmentModel);
-            eventEmitter.removeListener(`${EventType.CLOSE_MODAL} ${ModalNames.RescheduleAppointment}`, updateAppointment);
-            eventEmitter.removeListener(`${EventType.CLOSE_MODAL} ${ModalNames.CreateAppointment}`, addAppointment);
         };
     }, []);
 
@@ -120,7 +58,7 @@ const PatientHistory: FunctionComponent<PatientHistoryProps> = ({ appointments, 
                                 <TableCell align='center'>{item.serviceName}</TableCell>
                                 <TableCell align='center'>
                                     {item.resultId ? (
-                                        <Button onClick={() => navigate(`appointments/${item.id}`)}>View result</Button>
+                                        <Button onClick={() => navigate(`appointments/results/${item.resultId}`)}>View result</Button>
                                     ) : (
                                         <Button disabled={item.isApproved} onClick={() => setRescheduleAppointmentId(item.id)}>
                                             Reschedule
