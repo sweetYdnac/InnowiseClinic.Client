@@ -11,4 +11,5 @@ export enum EventType {
     SWITCH_ASIDE = 'switchAside',
     OPEN_TIMEPICKER = 'openTimePicker',
     TIMEPICKER_VALUE_CHANGE = 'timePickerValueChange',
+    DATEPICKER_VALUE_CHANGE = 'datePickerValueChange',
 }

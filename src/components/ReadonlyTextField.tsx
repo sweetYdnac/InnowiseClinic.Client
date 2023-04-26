@@ -28,9 +28,6 @@ const ReadonlyTextField: FunctionComponent<ReadonlyTextFieldProps> = ({
                 startAdornment: <InputAdornment position='start'>{startAdornment}</InputAdornment>,
                 endAdornment: <InputAdornment position='start'>{endAdornment}</InputAdornment>,
             }}
-            // InputLabelProps={{
-            //     shrink: true,
-            // }}
         />
     );
 };

@@ -2,12 +2,18 @@ import dayjs from 'dayjs';
 import ICreateAppointmentRequest from '../../types/appointments_api/requests/ICreateAppointmentRequest';
 import IGetPatientHistoryRequest from '../../types/appointments_api/requests/IGetPatientHistoryRequest';
 import IGetTimeSlotsRequest from '../../types/appointments_api/requests/IGetTimeSlotsRequest';
+import IRescheduleAppointmentRequest from '../../types/appointments_api/requests/IRescheduleAppointmentRequest';
 import IAppointmentHistoryResponse from '../../types/appointments_api/responses/IAppointmentHistoryResponse';
+import IRescheduleAppointmentResponse from '../../types/appointments_api/responses/IRescheduleAppointmentResponse';
 import ITimeSlotsResponse from '../../types/appointments_api/responses/ITimeSlotsResponse';
 import ICreatedResponse from '../../types/authorization_api/responses/ICreatedResponse';
 import IPagedResponse from '../../types/common/responses/IPagedResponse';
 import { getQueryString } from '../../utils/functions';
 import https from '../../utils/https-common';
+
+const getById = async (id: string) => {
+    return (await https.get<IRescheduleAppointmentResponse>(`/appointments/${id}`)).data;
+};
 
 const getTimeSlots = async (data: IGetTimeSlotsRequest) => {
     const path = 'appointments/timeslots?' + getQueryString(data);
@@ -24,10 +30,6 @@ const getTimeSlots = async (data: IGetTimeSlotsRequest) => {
     } as ITimeSlotsResponse;
 };
 
-const create = async (data: ICreateAppointmentRequest) => {
-    await https.post<ICreatedResponse>('appointments', data);
-};
-
 const getPatientHistory = async (id: string, data: IGetPatientHistoryRequest) => {
     const path = `/patients/${id}/appointments?` + getQueryString(data);
     const response = (await https.get<IPagedResponse<IAppointmentHistoryResponse>>(path)).data;
@@ -37,7 +39,7 @@ const getPatientHistory = async (id: string, data: IGetPatientHistoryRequest) =>
         items: response.items.map((item) => {
             return {
                 ...item,
-                date: dayjs(item.date, 'yyyy-MM-dd'),
+                date: dayjs(item.date, 'YYYY-MM-DD'),
                 startTime: dayjs(item.startTime, 'HH:mm'),
                 endTime: dayjs(item.endTime, 'HH:mm'),
             };
@@ -45,10 +47,20 @@ const getPatientHistory = async (id: string, data: IGetPatientHistoryRequest) =>
     } as IPagedResponse<IAppointmentHistoryResponse>;
 };
 
+const create = async (data: ICreateAppointmentRequest) => {
+    return (await https.post<ICreatedResponse>('appointments', data)).data;
+};
+
+const reschedule = async (id: string, data: IRescheduleAppointmentRequest) => {
+    await https.put(`/appointments/${id}`, data);
+};
+
 const AppointmentsService = {
+    getById,
     getTimeSlots,
-    create,
     getPatientHistory,
+    create,
+    reschedule,
 };
 
 export default AppointmentsService;

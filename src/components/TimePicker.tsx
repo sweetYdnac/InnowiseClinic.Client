@@ -24,7 +24,6 @@ const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id
             <Controller
                 name={id}
                 control={control}
-                defaultValue=''
                 render={({ field, fieldState }) => (
                     <>
                         <MobileTimePicker
@@ -46,15 +45,12 @@ const TimePicker: FunctionComponent<TimePickerProps> = ({ readOnly, disabled, id
 
                                 return false;
                             }}
-                            defaultValue={field?.value?.parsedTime ?? null}
-                            value={field?.value?.parsedTime ?? null}
-                            onChange={(date) => field.onChange(timeSlots.find((slot) => slot.time === date?.format('HH:mm')))}
-                            onAccept={(date) => {
+                            defaultValue={field?.value ?? null}
+                            value={field?.value ?? null}
+                            onChange={(time) => field.onChange(time)}
+                            onAccept={(time) => {
                                 field.onBlur();
-                                eventEmitter.emit(
-                                    `${EventType.TIMEPICKER_VALUE_CHANGE} ${id}`,
-                                    timeSlots.find((slot) => slot.time === date?.format('HH:mm'))?.doctors
-                                );
+                                eventEmitter.emit(`${EventType.TIMEPICKER_VALUE_CHANGE} ${id}`, time);
                             }}
                             onSelectedSectionsChange={() => field.onBlur()}
                             slotProps={{

@@ -1,10 +1,10 @@
 import { Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '../../utils/ProtectedRoute';
+import DoctorInformation from '../doctors/DoctorInformation';
+import Doctors from '../doctors/Doctors';
 import Home from '../home/Home';
 import Layout from '../layout/Layout';
-import Profile from '../profile/Profile';
-import Doctors from '../doctors/Doctors';
-import DoctorInformation from '../doctors/DoctorInformation';
+import PatientProfile from '../profile/PatientIProfile';
 import Services from '../services/Services';
 
 function App() {
@@ -16,7 +16,7 @@ function App() {
                     path='/profile'
                     element={
                         <ProtectedRoute>
-                            <Profile />
+                            <PatientProfile />
                         </ProtectedRoute>
                     }
                 ></Route>

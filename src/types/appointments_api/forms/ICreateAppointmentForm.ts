@@ -8,5 +8,5 @@ export default interface ICreateAppointmentForm {
     specializationId: string | null;
     serviceId: string | null;
     date: dayjs.Dayjs;
-    time: ITimeSlot | null;
+    time: dayjs.Dayjs | null;
 }

@@ -33,6 +33,8 @@ import Datepicker from '../CustomDatePicker';
 import CustomDialog from '../CustomDialog';
 import { PopupData } from '../Popup';
 import TimePicker from '../TimePicker';
+import SubmitButton from '../SubmitButton';
+import IAppointmentHistoryResponse from '../../types/appointments_api/responses/IAppointmentHistoryResponse';
 
 const validationSchema = yup.object().shape({
     officeId: yup.mixed<string>().required('Please, choose the office'),
@@ -83,34 +85,47 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
 
     const onSubmit = async (data: ICreateAppointmentForm) => {
         try {
-            let patient = await PatientsService.getById(AuthorizationService.getAccountId());
-
+            const patient = await PatientsService.getById(AuthorizationService.getAccountId());
             const doctor = options.doctors.find((item) => item.id === data.doctorId);
             const service = options.services.find((item) => item.id === data.serviceId);
 
-            let request = {
+            const request = {
                 patientId: AuthorizationService.getAccountId(),
                 patientFullName: `${patient.firstName} ${patient.lastName} ${patient.middleName}`,
                 patientPhoneNumber: patient.phoneNumber,
                 patientDateOfBirth: patient.dateOfBirth.format('YYYY-MM-DD'),
                 doctorId: data.doctorId,
                 doctorFullName: doctor?.fullName,
+                specializationId: doctor?.specializationId,
                 doctorSpecializationName: doctor?.specializationName,
                 serviceId: data.serviceId,
                 serviceName: service?.title,
                 duration: service?.duration,
                 officeId: data.officeId,
+                officeAddress: doctor?.officeAddress,
                 date: dayjs(data.date).format('YYYY-MM-DD'),
-                time: dayjs(data.time?.parsedTime).format('HH:mm:ss'),
+                time: dayjs(data.time).format('HH:mm:ss'),
             } as ICreateAppointmentRequest;
 
-            await AppointmentsService.create(request).then(() =>
+            await AppointmentsService.create(request).then((response) => {
                 eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
-                    message: 'Appointment created successfully',
+                    message: 'Appointment created successfully!',
                     color: 'success',
-                } as PopupData)
-            );
-            eventEmitter.emit(`${EventType.CLOSE_MODAL} ${modalName}`);
+                } as PopupData);
+
+                const dto = {
+                    id: response.id,
+                    date: data.date,
+                    startTime: data.time,
+                    endTime: dayjs(data.time).add(request.duration, 'minutes'),
+                    doctorFullName: request.doctorFullName,
+                    serviceName: request.serviceName,
+                    resultId: null,
+                    isApproved: false,
+                } as IAppointmentHistoryResponse;
+
+                eventEmitter.emit(`${EventType.CLOSE_MODAL} ${modalName}`, dto);
+            });
         } catch (error) {
             if (error instanceof AxiosError && error.response?.status === 400) {
                 setError('officeId', {
@@ -158,7 +173,6 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                     } as PopupData);
                 }
             }
-            console.log(error);
         }
     };
 
@@ -166,20 +180,15 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
         control,
         name: 'serviceId',
     });
-    useEffect(() => {
-        setValue('time', null, { shouldValidate: true });
-    }, [watchService, setValue]);
-
     const watchDate = useWatch({
         control,
         name: 'date',
     });
     useEffect(() => {
         setValue('time', null, { shouldValidate: true });
-    }, [watchDate, setValue]);
+    }, [watchService, watchDate, setValue]);
 
     useEffect(() => {
-        console.log('remove timeslots');
         if (options.doctors.length === 0 || !getValues('doctorId') || watchService === null || watchDate === null || !watchDate.isValid()) {
             setValue('time', null);
             setTimeSlots([]);
@@ -198,7 +207,7 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                 watchDate.isValid()
             ) {
                 const request = async () => {
-                    let data = {
+                    const data = {
                         date: getValues('date').format('YYYY-MM-DD'),
                         doctors: getValues('doctorId') ? getValues('doctorId') : options.doctors.map((item) => item.id),
                         duration: options.services.find((item) => item.id === getValues('serviceId'))?.duration ?? 30,
@@ -206,29 +215,25 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                         endTime: '18:00',
                     } as IGetTimeSlotsRequest;
 
-                    let response = await AppointmentsService.getTimeSlots(data);
+                    const response = await AppointmentsService.getTimeSlots(data);
                     setTimeSlots(response.timeSlots);
                 };
 
-                setValue('time', null);
+                setValue('time', null, { shouldValidate: true });
                 request();
             } else {
                 setTimeSlots([]);
             }
         };
 
-        const hangleTimeSlotChange = (doctorsId: string[]) => {
+        const hangleTimeSlotChange = (time: dayjs.Dayjs) => {
+            const slot = timeSlots.find((slot) => slot.time === time?.format('HH:mm'));
+
             setOptions({
                 ...options,
-                doctors: options.doctors.filter((item) => doctorsId.some((id) => item.id === id)),
+                doctors: options.doctors.filter((item) => slot?.doctors.some((id) => item.id === id)),
             });
         };
-
-        const setDoctorsFromTimeSlot = (data: ITimeSlot) =>
-            setOptions({
-                ...options,
-                doctors: options.doctors.filter((item) => data.doctors.some((id) => id === item.id)),
-            });
 
         const getOffices = async () => {
             const data = {
@@ -343,7 +348,6 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
 
         eventEmitter.addListener(`${EventType.CLICK_CLOSE_MODAL} ${modalName}`, openCancelDialog);
         eventEmitter.addListener(`${EventType.DECLINE_DIALOG} ${modalName}`, closeCancelDialog);
-        eventEmitter.addListener(`${EventType.ENTER_TIMESLOT}`, setDoctorsFromTimeSlot);
 
         eventEmitter.addListener(`${EventType.OPEN_TIMEPICKER} ${register('time').name}`, handleOpenTimePicker);
         eventEmitter.addListener(`${EventType.TIMEPICKER_VALUE_CHANGE} ${register('time').name}`, hangleTimeSlotChange);
@@ -365,7 +369,6 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
         return () => {
             eventEmitter.removeListener(`${EventType.CLICK_CLOSE_MODAL} ${modalName}`, openCancelDialog);
             eventEmitter.removeListener(`${EventType.DECLINE_DIALOG} ${modalName}`, closeCancelDialog);
-            eventEmitter.removeListener(`${EventType.ENTER_TIMESLOT}`, setDoctorsFromTimeSlot);
 
             eventEmitter.removeListener(`${EventType.OPEN_TIMEPICKER} ${register('time').name}`, handleOpenTimePicker);
             eventEmitter.removeListener(`${EventType.TIMEPICKER_VALUE_CHANGE} ${register('time').name}`, hangleTimeSlotChange);
@@ -467,7 +470,6 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                     control={control}
                     disableFuture={false}
                     disablePast={true}
-                    views={['year', 'month', 'day']}
                     openTo={'day'}
                 />
 
@@ -488,27 +490,9 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
                     timeSlots={timeSlots}
                 />
 
-                <Button
-                    type='submit'
-                    variant='contained'
-                    color='success'
-                    disabled={
-                        (errors.officeId?.message?.length ?? 0) > 0 ||
-                        (errors.specializationId?.message?.length ?? 0) > 0 ||
-                        (errors.doctorId?.message?.length ?? 0) > 0 ||
-                        (errors.serviceId?.message?.length ?? 0) > 0 ||
-                        (errors.date?.message?.length ?? 0) > 0 ||
-                        (errors.time?.message?.length ?? 0) > 0 ||
-                        (!touchedFields.officeId && !getValues('officeId')) ||
-                        (!touchedFields.specializationId && !getValues('specializationId')) ||
-                        (!touchedFields.doctorId && !getValues('doctorId')) ||
-                        (!touchedFields.serviceId && !getValues('serviceId')) ||
-                        (!touchedFields.date && !getValues('date')) ||
-                        (!touchedFields.time && !getValues('time'))
-                    }
-                >
+                <SubmitButton errors={errors} touchedFields={touchedFields}>
                     Create
-                </Button>
+                </SubmitButton>
             </Box>
 
             <CustomDialog

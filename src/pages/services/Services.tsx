@@ -24,8 +24,8 @@ const Services: FunctionComponent<ServicesProps> = () => {
     const defaultPagingOptions = {
         currentPage: 0,
         pageSize: 1,
-        totalPages: 0,
-        totalCount: 0,
+        totalPages: 1,
+        totalCount: 1,
     };
 
     const [isLoading, setIsLoading] = useState(false);
@@ -95,12 +95,12 @@ const Services: FunctionComponent<ServicesProps> = () => {
 
         const selectedCategory = tabs.find((item) => item.categoryId === selectedCategoryId);
 
-        if (selectedCategory?.items.length ?? 0 > 0) {
+        if ((selectedCategory?.items.length ?? 0) > 0 || selectedCategory?.totalCount === 0) {
             return;
         }
 
         fetchServices();
-    }, [fetchServices, selectedCategoryId, tabs]);
+    }, [selectedCategoryId]);
 
     const handleChangeTab = (event: React.SyntheticEvent, value: string) => {
         setSelectedCategoryId(value);
@@ -132,7 +132,7 @@ const Services: FunctionComponent<ServicesProps> = () => {
                                             </ListItem>
                                         ))}
                                     </List>
-                                    <Button onClick={handleLoadMore} disabled={tab.totalCount / tab.pageSize === tab.currentPage}>
+                                    <Button onClick={handleLoadMore} disabled={tab.totalCount <= tab.pageSize * tab.currentPage}>
                                         Load more
                                     </Button>
                                 </TabPanel>

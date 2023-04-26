@@ -3,6 +3,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { FunctionComponent } from 'react';
 import { Control, Controller } from 'react-hook-form';
+import { eventEmitter } from '../events/events';
+import { EventType } from '../events/eventTypes';
 
 interface DatepickerProps {
     readOnly: boolean;
@@ -48,7 +50,10 @@ const Datepicker: FunctionComponent<DatepickerProps> = ({
                             defaultValue={field.value as dayjs.Dayjs}
                             value={field.value as dayjs.Dayjs}
                             onChange={(date) => field.onChange(date)}
-                            onAccept={() => field.onBlur()}
+                            onAccept={() => {
+                                field.onBlur();
+                                eventEmitter.emit(`${EventType.DATEPICKER_VALUE_CHANGE} ${id}`);
+                            }}
                             onSelectedSectionsChange={() => field.onBlur()}
                             slotProps={{
                                 textField: {
