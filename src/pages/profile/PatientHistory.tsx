@@ -58,7 +58,7 @@ const PatientHistory: FunctionComponent<PatientHistoryProps> = ({ appointments, 
                                 <TableCell align='center'>{item.serviceName}</TableCell>
                                 <TableCell align='center'>
                                     {item.resultId ? (
-                                        <Button onClick={() => navigate(`appointments/results/${item.resultId}`)}>View result</Button>
+                                        <Button onClick={() => navigate(`/appointments/results/${item.resultId}`)}>View result</Button>
                                     ) : (
                                         <Button disabled={item.isApproved} onClick={() => setRescheduleAppointmentId(item.id)}>
                                             Reschedule

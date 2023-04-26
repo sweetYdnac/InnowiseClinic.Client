@@ -1,4 +1,4 @@
-import axios, { AxiosRequestHeaders } from 'axios';
+import axios, { AxiosError, AxiosRequestHeaders } from 'axios';
 import { PopupData } from '../components/Popup';
 import { EventType } from '../events/eventTypes';
 import { eventEmitter } from '../events/events';
@@ -31,8 +31,7 @@ axiosInstance.interceptors.response.use(
                 throw error;
             }
             case 401: {
-                await AuthorizationService.refresh();
-                break;
+                return await AuthorizationService.refresh((error as AxiosError).config);
             }
             case 403: {
                 eventEmitter.emit(`${EventType.SHOW_POPUP}`, {

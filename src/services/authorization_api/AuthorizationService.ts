@@ -1,4 +1,4 @@
-import { AxiosResponse } from 'axios';
+import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import jwt from 'jwt-decode';
 import { NIL } from 'uuid';
 import { LoginMessage } from '../../components/Header';
@@ -17,7 +17,7 @@ function setAuthData(accessToken: string, refreshToken: string) {
     localStorage.setItem('accessToken', accessToken);
     dispatchEvent(new Event('storage'));
 
-    let decoded = jwt<any>(accessToken);
+    const decoded = jwt<any>(accessToken);
     localStorage.setItem('accountId', decoded.sub);
 }
 
@@ -42,7 +42,7 @@ const isAuthorized = () => {
 };
 
 const signIn = async (data: ILoginRequest) => {
-    return await https.post<ITokenResponse>('/authorization/signIn', data).then((response: any) => {
+    return await https.post<ITokenResponse>('/authorization/signIn', data).then(async (response: any) => {
         setAuthData(response.data.accessToken, response.data.refreshToken);
     });
 };
@@ -50,14 +50,14 @@ const signIn = async (data: ILoginRequest) => {
 const signUp = async (data: IRegisterRequest) => {
     return await https.post<ICreatedResponse>('/authorization/signUp', data).then(async () => {
         await AuthorizationService.signIn(data as ILoginRequest).then(async () => {
-            let request: ICreateProfileRequest = {
+            const request: ICreateProfileRequest = {
                 id: getAccountId(),
                 firstName: 'First Name',
                 lastName: 'Last Name',
                 middleName: '',
                 dateOfBirth: '1900-01-01',
                 phoneNumber: '111111111',
-                photoId: NIL,
+                photoId: null,
             };
 
             await PatientsService.createPatient(request);
@@ -72,16 +72,23 @@ const logout = () => {
     dispatchEvent(new Event('storage'));
 };
 
-const refresh = async () => {
-    let refreshToken = localStorage.getItem('refreshToken');
+const refresh = async (config?: AxiosRequestConfig<any>) => {
+    const refreshToken = localStorage.getItem('refreshToken');
 
-    await https.post<ITokenResponse>('/authorization/refresh', { refreshToken }).then((response: AxiosResponse<ITokenResponse, any>) => {
-        setAuthData(response.data.accessToken ?? '', response.data.refreshToken ?? '');
+    return await https
+        .post<ITokenResponse>('/authorization/refresh', { refreshToken })
+        .then(async (response: AxiosResponse<ITokenResponse, any>) => {
+            setAuthData(response.data.accessToken ?? '', response.data.refreshToken ?? '');
 
-        if (!response.data.accessToken || !response.data.refreshToken) {
-            eventEmitter.emit(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`);
-        }
-    });
+            if (!response.data.accessToken || !response.data.refreshToken) {
+                logout();
+                eventEmitter.emit(`${EventType.CLICK_CLOSE_MODAL} ${LoginMessage.LOGIN}`);
+            } else {
+                if (config) {
+                    return await https(config);
+                }
+            }
+        });
 };
 
 const AuthorizationService = {

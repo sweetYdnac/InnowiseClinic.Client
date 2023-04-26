@@ -5,5 +5,5 @@ export default interface ICreateProfileRequest {
     middleName?: string;
     dateOfBirth: string;
     phoneNumber: string;
-    photoId?: string;
+    photoId?: string | null;
 }

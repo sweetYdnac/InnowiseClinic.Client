@@ -39,8 +39,8 @@ const PatientProfile = () => {
 
     const handleError = useCallback(
         (error: any) => {
-            navigate('/');
             if (error instanceof AxiosError && error.status === 400) {
+                navigate('/');
                 eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
                     message: 'Unknown error occurred',
                 } as PopupData);

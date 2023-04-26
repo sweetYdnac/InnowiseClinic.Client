@@ -7,6 +7,7 @@
         "@emotion/styled": "^11.10.6",
         "@hookform/resolvers": "^3.0.1",
         "@mui/icons-material": "^5.11.11",
+        "@mui/joy": "^5.0.0-alpha.77",
         "@mui/lab": "^5.0.0-alpha.127",
         "@mui/material": "^5.12.1",
         "@mui/x-date-pickers": "^6.1.0",

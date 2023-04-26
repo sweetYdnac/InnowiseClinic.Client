@@ -4,6 +4,7 @@ import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { FunctionComponent, useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import * as yup from 'yup';
 import { EventType } from '../../events/eventTypes';
 import { eventEmitter } from '../../events/events';
@@ -58,6 +59,7 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
         services: [] as IServiceInformationResponse[],
     });
     const [timeSlots, setTimeSlots] = useState<ITimeSlot[]>([]);
+    const navigate = useNavigate();
 
     const {
         register,
@@ -85,6 +87,18 @@ const CreateAppointment: FunctionComponent<CreateAppointmentProps> = ({ modalNam
     const onSubmit = async (data: ICreateAppointmentForm) => {
         try {
             const patient = await PatientsService.getById(AuthorizationService.getAccountId());
+
+            if (!patient.isActive) {
+                navigate('/profile');
+                eventEmitter.emit(`${EventType.SHOW_POPUP}`, {
+                    message: 'Your profile does not configured.',
+                    color: 'error',
+                } as PopupData);
+
+                eventEmitter.emit(`${EventType.CLOSE_MODAL} ${modalName}`);
+                return;
+            }
+
             const doctor = options.doctors.find((item) => item.id === data.doctorId);
             const service = options.services.find((item) => item.id === data.serviceId);
 
