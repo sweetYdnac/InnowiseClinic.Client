@@ -1,6 +1,8 @@
 import { yupResolver } from '@hookform/resolvers/yup';
+import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { FunctionComponent, useEffect, useState } from 'react';
@@ -118,7 +120,12 @@ const PatientInformation: FunctionComponent<PatientInformationProps> = ({ workMo
 
     return (
         <>
-            {mode === 'view' && <Button onClick={enableEditMode}>Edit</Button>}
+            {mode === 'view' && (
+                <IconButton onClick={enableEditMode}>
+                    <ModeEditIcon fontSize='medium' />
+                </IconButton>
+            )}
+
             <Box
                 onSubmit={handleSubmit(onSubmit)}
                 component={mode === 'view' ? 'div' : 'form'}

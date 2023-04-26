@@ -5,7 +5,7 @@ import DoctorInformation from '../doctors/DoctorInformation';
 import Doctors from '../doctors/Doctors';
 import Home from '../home/Home';
 import Layout from '../layout/Layout';
-import PatientProfile from '../profile/PatientIProfile';
+import PatientProfile from '../profile/PatientProfile';
 import Services from '../services/Services';
 
 function App() {
