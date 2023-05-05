@@ -24,7 +24,7 @@ const DoctorCard = <T,>({ item }: CardProps<T>) => {
                 transition: 'all 0.15s ease-in',
                 position: 'relative',
             }}
-            onClick={() => navigate(`/doctors/${item.id}`, { state: item.dto })}
+            onClick={() => navigate(`/doctor/${item.id}`, { state: item.dto })}
         >
             <CardHeader title={item.title} subheader={item.subtitle} />
             <CardMedia component='img' height='100' src={item.photo} alt='photo' />

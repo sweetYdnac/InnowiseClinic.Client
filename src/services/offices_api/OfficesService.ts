@@ -4,7 +4,7 @@ import { getQueryString } from '../../utils/functions';
 import https from '../../utils/https-common';
 
 const getPaged = async (data: IGetPagedOfficesRequest) => {
-    let path = '/offices?' + getQueryString(data);
+    const path = '/offices?' + getQueryString(data);
 
     return (await https.get<IPagedOfficeResponse>(path)).data;
 };

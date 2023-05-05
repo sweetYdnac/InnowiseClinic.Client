@@ -30,7 +30,7 @@ function App() {
                     }
                 ></Route>
                 <Route
-                    path='/doctors/:id'
+                    path='/doctor/:id'
                     element={
                         <ProtectedRoute>
                             <DoctorInformation />

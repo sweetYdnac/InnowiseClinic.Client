@@ -4,7 +4,7 @@ import { getQueryString } from '../../utils/functions';
 import https from '../../utils/https-common';
 
 const getPaged = async (data: IGetPagedDoctorsRequest) => {
-    let path = '/doctors?' + getQueryString(data);
+    const path = '/doctors?' + getQueryString(data);
 
     return (await https.get<IPagedDoctorsResponse>(path)).data;
 };
