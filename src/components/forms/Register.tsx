@@ -17,13 +17,12 @@ import './styles/ModalForm.css';
 
 const validationSchema = yup.object().shape({
     email: yup.string().required('Please, enter the email').email(`You've entered an invalid email`),
-
     password: yup
         .string()
         .min(6, 'Password must be at least 6 characters')
         .max(15, 'Password must be less than 15 characters')
         .required('Please, enter the password'),
-
+    role: yup.string().required(),
     passwordConfirmation: yup.string().oneOf([yup.ref('password')], 'Password confirmation does not match'),
 });
 
@@ -39,6 +38,7 @@ const Register: FunctionComponent = () => {
         defaultValues: {
             email: '',
             password: '',
+            role: 'patient',
         },
     });
 
